@@ -18,7 +18,7 @@ class WgmTwitter_SetupSection extends Extension_PageSection {
 	function render() {
 		// check whether extensions are loaded or not
 		$extensions = array(
-			'ssh2' => extension_loaded('oauth')
+			'oauth' => extension_loaded('oauth')
 		);
 		$tpl = DevblocksPlatform::getTemplateService();
 
@@ -31,6 +31,7 @@ class WgmTwitter_SetupSection extends Extension_PageSection {
 			'users' => json_decode(DevblocksPlatform::getPluginSetting('wgm.twitter', 'users', ''), TRUE),
 		);
 		$tpl->assign('params', $params);
+		$tpl->assign('extensions', $extensions);
 		
 		$tpl->display('devblocks:wgm.twitter::setup/index.tpl');
 	}
