@@ -31,6 +31,7 @@ class WgmTwitter_SetupSection extends Extension_PageSection {
 			'users' => json_decode(DevblocksPlatform::getPluginSetting('wgm.twitter', 'users', ''), TRUE),
 		);
 		$tpl->assign('params', $params);
+		$tpl->assign('extensions', $extensions);
 		
 		$tpl->display('devblocks:wgm.twitter::setup/index.tpl');
 	}

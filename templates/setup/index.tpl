@@ -1,4 +1,7 @@
 <h2>{'wgm.twitter.common'|devblocks_translate}</h2>
+{if !$extensions.oauth}
+<b>The oauth extension is not installed.</b>
+{else}
 
 <form action="javascript:;" method="post" id="frmSetupTwitter" onsubmit="return false;">
 <input type="hidden" name="c" value="config">
@@ -58,3 +61,4 @@ $('#frmSetupTwitter BUTTON.submit')
 	})
 ;
 </script>
+{/if}
