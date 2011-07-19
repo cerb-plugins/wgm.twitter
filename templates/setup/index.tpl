@@ -7,7 +7,7 @@
 <input type="hidden" name="action" value="saveJson">
 
 <fieldset>
-	<legend>Twitter Settings</legend>
+	<legend>Twitter Application</legend>
 	
 	<b>Consumer key:</b><br>
 	<input type="text" name="consumer_key" value="{$params.consumer_key}" size="64"><br>
@@ -22,13 +22,13 @@
 
 </form>
 
-<form action="{devblocks_url}ajax.php{/devblocks_url}" method="post" id="frmAuthTwitter" style="display: {if $params.consumer_key && $params.consumer_secret}block{else}hidden{/if}">
+<form action="{devblocks_url}ajax.php{/devblocks_url}" method="post" id="frmAuthTwitter" style="display: {if $params.consumer_key && $params.consumer_secret}block{else}none{/if}">
 <input type="hidden" name="c" value="config">
 <input type="hidden" name="a" value="handleSectionAction">
 <input type="hidden" name="section" value="twitter">
 <input type="hidden" name="action" value="auth">
 <fieldset>
-	<legend>Twitter Auth</legend>
+	<legend>Twitter Authorization</legend>
 	<input type="submit" class="submit" value="Sign in with Twitter">
 </fieldset>
 </form>
