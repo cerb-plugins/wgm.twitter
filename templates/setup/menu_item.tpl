@@ -1,0 +1,1 @@
+<a href="{devblocks_url}c=config&a=twitter{/devblocks_url}">{'wgm.twitter.common'|devblocks_translate}</a>
