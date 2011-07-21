@@ -74,7 +74,7 @@
 				<name>WgmTwitter_EventActionPost</name>
 			</class>
 			<params>
-				<param key="label" value="Update Twitter Status" />
+				<param key="label" value="Post to Twitter" />
 			</params>
 		</extension>
 		

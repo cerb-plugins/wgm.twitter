@@ -65,7 +65,7 @@ class WgmTwitter_SetupSection extends Extension_PageSection {
 		
 		$url = DevblocksPlatform::getUrlService();
 		$oauth_callback_url = $url->write('ajax.php?c=config&a=handleSectionAction&section=twitter&action=auth&_callback=true', true);
-				
+		
 		if($callback) {
 			if(!$denied) {
 				$twitter->setCredentials($_SESSION['oauth_token'], $_SESSION['oauth_token_secret']);
@@ -85,8 +85,10 @@ class WgmTwitter_SetupSection extends Extension_PageSection {
 				$_SESSION['oauth_token_secret'] = $request_token['oauth_token_secret'];
 				
 				header('Location: ' . WgmTwitter_API::TWITTER_AUTHENTICATE_URL . '?oauth_token=' . $request_token['oauth_token']);
+				exit;
+				
 			} catch(OAuthException $e) {
-				echo "Exception " . $e->getMessage();
+				echo "Exception: " . $e->getMessage();
 			}
 		}
 	}
