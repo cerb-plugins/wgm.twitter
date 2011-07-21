@@ -13,7 +13,7 @@ This plugin provides integration with [Twitter](http://www.twitter.com/) via the
 
 Installation
 ------------
-* Make a new [Twitter Developer Application](https://dev.twitter.com/apps/new)
+* Make a new [Twitter Developer Application](https://dev.twitter.com/apps/new) _You must enter a callback URL (even if it is just a placeholder) for the plugin to work properly_
 * Change directory to **/cerb5/storage/plugins/**
 * `git clone git://github.com/cerb5-plugins/wgm.twitter.git`
 * In your helpdesk, enable the plugin from **Setup->Plugins**.
