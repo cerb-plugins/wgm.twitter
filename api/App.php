@@ -76,6 +76,8 @@ class WgmTwitter_SetupSection extends Extension_PageSection {
 				
 				DevblocksPlatform::setPluginSetting('wgm.twitter', 'users', json_encode($users));
 				DevblocksPlatform::redirect(new DevblocksHttpResponse(array('config/twitter/')));
+			} else {
+				DevblocksPlatform::redirect(new DevblocksHttpResponse(array('config/twitter/')));
 			}
 		} else {
 			try {
