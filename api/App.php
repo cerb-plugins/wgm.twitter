@@ -144,11 +144,11 @@ class WgmTwitter_API {
 		$this->_fetch($url, 'POST', $params);
 	}
 	
-	public function get($url) {
+	public function get($url, $params = array()) {
 		$this->_fetch($url, 'GET');
 	}
 	
-	private function _fetch($url, $method = 'GET', $params = array()) {
+	private function _fetch($url, $method = 'GET', $params) {
 		switch($method) {
 			case 'POST':
 				$method = OAUTH_HTTP_METHOD_POST;
