@@ -5,7 +5,7 @@ Copyright (C) 2011 WebGroup Media, LLC.
 
 Experimental
 ------------
-This plugin is currently being developed and is offered on an experimental basis.  _It is currently only compatible with Cerberus Helpdesk 5.4_.
+This plugin is currently being developed and is offered on an experimental basis.  _It is currently only compatible with Cerberus Helpdesk 5.4 and later_.
 
 What's this?
 ------------
