@@ -178,6 +178,31 @@ class WgmTwitter_EventActionPost extends Extension_DevblocksEventAction {
 		$tpl->display('devblocks:wgm.twitter::events/action_update_status_twitter.tpl');
 	}
 	
+	function simulate($token, Model_TriggerEvent $trigger, $params, &$values) {
+		$users = DevblocksPlatform::getPluginSetting('wgm.twitter', 'users');
+		$users = json_decode($users, TRUE);
+
+		@$user = $users[$params['user']];
+
+		if(empty($user) || !isset($user['screen_name'])) {
+			return "[ERROR] No Twitter user selected.";
+		}
+		
+		// [TODO] Test Twitter API connection
+		
+		$tpl_builder = DevblocksPlatform::getTemplateBuilder();
+		if(false !== ($content = $tpl_builder->build($params['content'], $values))) {
+			$out = sprintf(">>> Posting to Twitter for @%s:\n%s\n",
+				$user['screen_name'],
+				$content
+			);
+		} else {
+			return "[ERROR] Template failed to parse.";
+		}
+		
+		return $out;
+	}
+	
 	function run($token, Model_TriggerEvent $trigger, $params, &$values) {
 		$twitter = WgmTwitter_API::getInstance();
 		
@@ -189,7 +214,6 @@ class WgmTwitter_EventActionPost extends Extension_DevblocksEventAction {
 		// Translate message tokens
 		$tpl_builder = DevblocksPlatform::getTemplateBuilder();
 		if(false !== ($content = $tpl_builder->build($params['content'], $values))) {
-
 			$twitter->setCredentials($user['oauth_token'], $user['oauth_token_secret']);
 			$twitter->post(WgmTwitter_API::TWITTER_UPDATE_STATUS_API, $content);
 			
