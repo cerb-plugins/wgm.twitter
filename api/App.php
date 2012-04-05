@@ -178,7 +178,7 @@ class WgmTwitter_EventActionPost extends Extension_DevblocksEventAction {
 		$tpl->display('devblocks:wgm.twitter::events/action_update_status_twitter.tpl');
 	}
 	
-	function simulate($token, Model_TriggerEvent $trigger, $params, &$values) {
+	function simulate($token, Model_TriggerEvent $trigger, $params, DevblocksDictionaryDelegate $dict) {
 		$users = DevblocksPlatform::getPluginSetting('wgm.twitter', 'users');
 		$users = json_decode($users, TRUE);
 
@@ -191,7 +191,7 @@ class WgmTwitter_EventActionPost extends Extension_DevblocksEventAction {
 		// [TODO] Test Twitter API connection
 		
 		$tpl_builder = DevblocksPlatform::getTemplateBuilder();
-		if(false !== ($content = $tpl_builder->build($params['content'], $values))) {
+		if(false !== ($content = $tpl_builder->build($params['content'], $dict))) {
 			$out = sprintf(">>> Posting to Twitter for @%s:\n%s\n",
 				$user['screen_name'],
 				$content
@@ -203,7 +203,7 @@ class WgmTwitter_EventActionPost extends Extension_DevblocksEventAction {
 		return $out;
 	}
 	
-	function run($token, Model_TriggerEvent $trigger, $params, &$values) {
+	function run($token, Model_TriggerEvent $trigger, $params, DevblocksDictionaryDelegate $dict) {
 		$twitter = WgmTwitter_API::getInstance();
 		
 		$users = DevblocksPlatform::getPluginSetting('wgm.twitter', 'users');
@@ -213,7 +213,7 @@ class WgmTwitter_EventActionPost extends Extension_DevblocksEventAction {
 		
 		// Translate message tokens
 		$tpl_builder = DevblocksPlatform::getTemplateBuilder();
-		if(false !== ($content = $tpl_builder->build($params['content'], $values))) {
+		if(false !== ($content = $tpl_builder->build($params['content'], $dict))) {
 			$twitter->setCredentials($user['oauth_token'], $user['oauth_token_secret']);
 			$twitter->post(WgmTwitter_API::TWITTER_UPDATE_STATUS_API, $content);
 			
