@@ -97,7 +97,6 @@ class WgmTwitter_SetupSection extends Extension_PageSection {
 endif;
 
 class WgmTwitter_API {
-	
 	const TWITTER_REQUEST_TOKEN_URL = "https://api.twitter.com/oauth/request_token";
 	const TWITTER_AUTHENTICATE_URL = "https://api.twitter.com/oauth/authenticate";
 	const TWITTER_ACCESS_TOKEN_URL = "https://api.twitter.com/oauth/access_token";
@@ -141,11 +140,11 @@ class WgmTwitter_API {
 			'status' => $content,		
 		);
 		
-		$this->_fetch($url, 'POST', $params);
+		return $this->_fetch($url, 'POST', $params);
 	}
 	
 	public function get($url) {
-		$this->_fetch($url, 'GET');
+		return $this->_fetch($url, 'GET');
 	}
 	
 	private function _fetch($url, $method = 'GET', $params = array()) {
@@ -153,11 +152,15 @@ class WgmTwitter_API {
 			case 'POST':
 				$method = OAUTH_HTTP_METHOD_POST;
 				break;
+				
 			default:
 				$method = OAUTH_HTTP_METHOD_GET;
+				break;
 		}
-		
+
 		$this->_oauth->fetch($url, $params, $method);
+		
+		return $this->_oauth->getLastResponse();
 	}
 }
 
