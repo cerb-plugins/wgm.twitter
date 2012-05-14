@@ -102,6 +102,7 @@ class WgmTwitter_API {
 	const TWITTER_ACCESS_TOKEN_URL = "https://api.twitter.com/oauth/access_token";
 	const TWITTER_PUBLIC_TIMELINE_API = "https://api.twitter.com/1/statuses/public_timeline.json";
 	const TWITTER_UPDATE_STATUS_API = "https://api.twitter.com/1/statuses/update.json";
+	const TWITTER_STATUSES_MENTIONS_API = "https://api.twitter.com/1/statuses/mentions.json";
 	
 	static $_instance = null;
 	private $_oauth = null;
@@ -159,6 +160,8 @@ class WgmTwitter_API {
 		}
 
 		$this->_oauth->fetch($url, $params, $method);
+		
+		//var_dump($this->_oauth->getLastResponseInfo());
 		
 		return $this->_oauth->getLastResponse();
 	}
