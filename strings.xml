@@ -10,5 +10,29 @@
 			<tuv xml:lang="en_US"><seg>Twitter</seg></tuv>
 		</tu>
 		
+		<!-- TwitterMessage -->
+		
+		<tu tuid='dao.twitter_message.twitter_id'>
+			<tuv xml:lang="en_US"><seg>Twitter ID</seg></tuv>
+		</tu>
+		<tu tuid='dao.twitter_message.twitter_user_id'>
+			<tuv xml:lang="en_US"><seg>Twitter User ID</seg></tuv>
+		</tu>
+		<tu tuid='dao.twitter_message.user_name'>
+			<tuv xml:lang="en_US"><seg>User Name</seg></tuv>
+		</tu>
+		<tu tuid='dao.twitter_message.user_screen_name'>
+			<tuv xml:lang="en_US"><seg>Screen Name</seg></tuv>
+		</tu>
+		<tu tuid='dao.twitter_message.user_followers_count'>
+			<tuv xml:lang="en_US"><seg># Followers</seg></tuv>
+		</tu>
+		<tu tuid='dao.twitter_message.user_profile_image_url'>
+			<tuv xml:lang="en_US"><seg>Profile Image</seg></tuv>
+		</tu>
+		<tu tuid='dao.twitter_message.is_closed'>
+			<tuv xml:lang="en_US"><seg>Is Closed</seg></tuv>
+		</tu>
+		
 	</body>
 </tmx>

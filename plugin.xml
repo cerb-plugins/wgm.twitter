@@ -2,10 +2,10 @@
 <plugin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.devblocks.com/schema/plugin.xsd">
 	<id>wgm.twitter</id>
 	<name>Twitter Integration</name>
-	<description>This plugin provides integration with Twitter via their REST API. This plugin is intended to be a bridge used by other plugins to communicate with Twitter services. In addition, it adds a new Virtual Attendant action with the ability to post status updates to Twitter.</description>
+	<description>This plugin provides integration with Twitter via their API. This plugin is intended to be a bridge used by other plugins to communicate with Twitter services. It introduces record types for Twitter Messages.  In addition, it adds a new Virtual Attendant action with the ability to post status updates to Twitter.</description>
 	<author>WebGroup Media, LLC.</author>
-	<version>1.0.3</version>
-	<link>http://www.cerb5.com/</link>
+	<version>1.0.4</version>
+	<link>http://www.cerb6.com/</link>
 	<image>plugin.png</image>
  
  	<!-- Requirements -->
@@ -18,8 +18,14 @@
 	<!-- Plugin Dependencies -->
 	
 	<dependencies>
-		<require plugin_id="cerberusweb.core" version="6.0.0-dev" />
+		<require plugin_id="cerberusweb.core" version="6.0.0" />
 	</dependencies>
+
+	<!-- Patches -->
+	
+	<patches>
+		<patch version="6.0.0" revision="1" file="patches/6.0.0.php" />
+	</patches>
 
 	<!-- Exported Classes -->
 	
@@ -27,11 +33,43 @@
 		<file path="api/App.php">
 			<class name="WgmTwitter_API" />
 		</file>
+		
+		<file path="api/dao/twitter_message.php">
+			<class name="Context_TwitterMessage" />
+			<class name="DAO_TwitterMessage" />
+			<class name="Model_TwitterMessage" />
+			<class name="SearchFields_TwitterMessage" />
+			<class name="View_TwitterMessage" />
+		</file>
 	</class_loader>
 
 	<!-- Extensions -->
  
 	<extensions>
+
+		<!-- Contexts -->
+
+		<extension point="devblocks.context">
+			<id>cerberusweb.contexts.twitter.message</id>
+			<name>Twitter Message</name>
+			<class>
+				<file>api/dao/twitter_message.php</file>
+				<name>Context_TwitterMessage</name>
+			</class>
+			<params>
+				<param key="alias" value="twitter_message" />
+				<param key="view_class" value="View_TwitterMessage" />
+				<param key="options">
+					<value>
+						<!--<data key="create" />-->
+						<data key="find" />
+						<!--<data key="snippets" />-->
+						<data key="workspace" />
+						<data key="va_variable" />
+					</value>
+				</param>
+			</params>
+		</extension>
 
 		<!-- Setup Page Menu Item -->
 
@@ -61,6 +99,18 @@
 				<param key="page_id" value="core.page.configuration" />
 				<param key="uri" value="twitter" />
 			</params>
+		</extension>
+		
+		<!-- Scheduled Jobs -->
+		
+		<extension point="cerberusweb.cron">
+			<id>wgmtwitter.cron</id>
+			<name>Twitter Checker</name>
+			<class>
+				<file>api/App.php</file>
+				<name>Cron_WgmTwitterChecker</name>
+			</class>
+			<params />
 		</extension>
 		
 		<!-- Event Actions -->

@@ -75,7 +75,7 @@ class WgmTwitter_SetupSection extends Extension_PageSection {
 				$users[$user['user_id']] = $user;
 				
 				DevblocksPlatform::setPluginSetting('wgm.twitter', 'users', json_encode($users));
-				DevblocksPlatform::redirect(new DevblocksHttpResponse(array('config/twitter/')));
+				DevblocksPlatform::redirect(new DevblocksHttpResponse(array('config','twitter')));
 			}
 		} else {
 			try {
@@ -165,7 +165,76 @@ class WgmTwitter_API {
 		
 		return $this->_oauth->getLastResponse();
 	}
-}
+};
+
+if(class_exists('CerberusCronPageExtension')):
+class Cron_WgmTwitterChecker extends CerberusCronPageExtension {
+	public function run() {
+		$logger = DevblocksPlatform::getConsoleLog('Twitter Checker');
+		$logger->info("Started");
+
+		$twitter = WgmTwitter_API::getInstance();
+		
+		
+		$users = DevblocksPlatform::getPluginSetting('wgm.twitter', 'users');
+		$users = json_decode($users, TRUE);
+
+		foreach($users as $user_id => $user) {
+			$logger->info(sprintf("Checking mentions for @%s", $user['screen_name']));
+			
+			try {
+				$twitter->setCredentials($user['oauth_token'], $user['oauth_token_secret']);
+				
+				$out = $twitter->get('https://api.twitter.com/1/statuses/mentions.json?count=100'); //&since_id=0
+			
+				if(false !== ($json = @json_decode($out, true))) {
+					
+					foreach($json as $message) {
+						$fields = array(
+							DAO_TwitterMessage::TWITTER_ID => $message['id_str'],
+							DAO_TwitterMessage::TWITTER_USER_ID => $message['user']['id_str'],
+							DAO_TwitterMessage::CREATED_DATE => strtotime($message['created_at']),
+							DAO_TwitterMessage::IS_CLOSED => 0,
+							DAO_TwitterMessage::USER_NAME => $message['user']['name'],
+							DAO_TwitterMessage::USER_SCREEN_NAME => $message['user']['screen_name'],
+							DAO_TwitterMessage::USER_PROFILE_IMAGE_URL => $message['user']['profile_image_url'],
+							DAO_TwitterMessage::USER_FOLLOWERS_COUNT => $message['user']['followers_count'],
+							DAO_TwitterMessage::CONTENT => $message['text'],
+						);
+						
+						$tweet_id = DAO_TwitterMessage::create($fields);
+						
+						$logger->info(sprintf("Saved mention #%d from %s", $tweet_id, $message['user']['screen_name']));
+					}					
+					
+				} else {
+					
+				}
+				
+				
+			} catch(OAuthException $e) { /* @var $e Exception */
+				$logger->error($e->getMessage());
+			}
+		}
+		
+		$logger->info("Finished");
+	}
+	
+	public function configure($instance) {
+		$tpl = DevblocksPlatform::getTemplateService();
+		$tpl->cache_lifetime = "0";
+
+		// [TODO] Load settings
+		
+		//$tpl->display('devblocks:wgm.twitter::cron/config.tpl');
+	}
+	
+	public function saveConfigurationAction() {
+		//@$example_waitdays = DevblocksPlatform::importGPC($_POST['example_waitdays'], 'integer');
+		//$this->setParam('example_waitdays', $example_waitdays);
+	}
+};
+endif;
 
 if(class_exists('Extension_DevblocksEventAction')):
 class WgmTwitter_EventActionPost extends Extension_DevblocksEventAction {
