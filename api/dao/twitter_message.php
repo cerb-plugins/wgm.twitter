@@ -343,7 +343,7 @@ class Model_TwitterMessage {
 	public $content;
 };
 
-class View_TwitterMessage extends C4_AbstractView {
+class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subtotals {
 	const DEFAULT_ID = 'twittermessage';
 
 	function __construct() {
@@ -393,6 +393,75 @@ class View_TwitterMessage extends C4_AbstractView {
 	function getDataSample($size) {
 		return $this->_doGetDataSample('DAO_TwitterMessage', $size);
 	}
+	
+	function getSubtotalFields() {
+		$all_fields = $this->getParamsAvailable();
+		
+		$fields = array();
+
+		if(is_array($all_fields))
+		foreach($all_fields as $field_key => $field_model) {
+			$pass = false;
+			
+			switch($field_key) {
+				// Fields
+				case SearchFields_TwitterMessage::IS_CLOSED:
+				case SearchFields_TwitterMessage::USER_NAME:
+				case SearchFields_TwitterMessage::USER_SCREEN_NAME:
+					$pass = true;
+					break;
+					
+				// Virtuals
+// 				case SearchFields_TwitterMessage::VIRTUAL_CONTEXT_LINK:
+// 					$pass = true;
+// 					break;
+					
+				// Valid custom fields
+				default:
+					if('cf_' == substr($field_key,0,3))
+						$pass = $this->_canSubtotalCustomField($field_key);
+					break;
+			}
+			
+			if($pass)
+				$fields[$field_key] = $field_model;
+		}
+		
+		return $fields;
+	}
+	
+	function getSubtotalCounts($column) {
+		$counts = array();
+		$fields = $this->getFields();
+
+		if(!isset($fields[$column]))
+			return array();
+		
+		switch($column) {
+			case SearchFields_TwitterMessage::IS_CLOSED:
+				$counts = $this->_getSubtotalCountForBooleanColumn('DAO_TwitterMessage', $column);
+				break;
+				
+			case SearchFields_TwitterMessage::USER_NAME:
+			case SearchFields_TwitterMessage::USER_SCREEN_NAME:
+				$counts = $this->_getSubtotalCountForStringColumn('DAO_TwitterMessage', $column);
+				break;
+				
+// 			case SearchFields_TwitterMessage::VIRTUAL_CONTEXT_LINK:
+// 				$counts = $this->_getSubtotalCountForContextLinkColumn('DAO_TwitterMessage', 'cerberusweb.contexts.twitter.message', $column);
+// 				break;
+				
+			default:
+				// Custom fields
+				if('cf_' == substr($column,0,3)) {
+					$counts = $this->_getSubtotalCountForCustomColumn('DAO_TwitterMessage', $column, 'twitter_message.id');
+				}
+				
+				break;
+		}
+		
+		return $counts;
+	}	
 
 	function render() {
 		$this->_sanitize();
@@ -405,7 +474,8 @@ class View_TwitterMessage extends C4_AbstractView {
 		//$custom_fields = DAO_CustomField::getByContext(CerberusContexts::XXX);
 		//$tpl->assign('custom_fields', $custom_fields);
 
-		$tpl->display('devblocks:wgm.twitter::tweet/view.tpl');
+		$tpl->assign('view_template', 'devblocks:wgm.twitter::tweet/view.tpl');
+		$tpl->display('devblocks:cerberusweb.core::internal/views/subtotals_and_view.tpl');
 	}
 
 	function renderCriteria($field) {
