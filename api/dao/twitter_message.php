@@ -27,7 +27,7 @@ class DAO_TwitterMessage extends C4_ORMHelper {
 		parent::_update($ids, 'twitter_message', $fields);
 		
 		// Log the context update
-	    //DevblocksPlatform::markContextChanged('example.context', $ids);
+	    DevblocksPlatform::markContextChanged('cerberusweb.contexts.twitter.message', $ids);
 	}
 	
 	static function updateWhere($fields, $where) {
@@ -315,13 +315,13 @@ class SearchFields_TwitterMessage implements IDevblocksSearchFields {
 		);
 		
 		// Custom Fields
-		//$fields = DAO_CustomField::getByContext(CerberusContexts::XXX);
+		$fields = DAO_CustomField::getByContext('cerberusweb.contexts.twitter.message');
 
-		//if(is_array($fields))
-		//foreach($fields as $field_id => $field) {
-		//	$key = 'cf_'.$field_id;
-		//	$columns[$key] = new DevblocksSearchField($key,$key,'field_value',$field->name,$field->type);
-		//}
+		if(is_array($fields))
+		foreach($fields as $field_id => $field) {
+			$key = 'cf_'.$field_id;
+			$columns[$key] = new DevblocksSearchField($key,$key,'field_value',$field->name,$field->type);
+		}
 		
 		// Sort by label (translation-conscious)
 		DevblocksPlatform::sortObjects($columns, 'db_label');
@@ -471,8 +471,8 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 		$tpl->assign('view', $this);
 
 		// Custom fields
-		//$custom_fields = DAO_CustomField::getByContext(CerberusContexts::XXX);
-		//$tpl->assign('custom_fields', $custom_fields);
+		$custom_fields = DAO_CustomField::getByContext('cerberusweb.contexts.twitter.message');
+		$tpl->assign('custom_fields', $custom_fields);
 
 		$tpl->assign('view_template', 'devblocks:wgm.twitter::tweet/view.tpl');
 		$tpl->display('devblocks:cerberusweb.core::internal/views/subtotals_and_view.tpl');
@@ -505,7 +505,6 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 				$tpl->display('devblocks:cerberusweb.core::internal/views/criteria/__date.tpl');
 				break;
 				
-			/*
 			default:
 				// Custom Fields
 				if('cf_' == substr($field,0,3)) {
@@ -514,7 +513,6 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 					echo ' ';
 				}
 				break;
-			*/
 		}
 	}
 
@@ -573,14 +571,12 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 				$criteria = new DevblocksSearchCriteria($field,$oper,$bool);
 				break;
 				
-			/*
 			default:
 				// Custom Fields
 				if(substr($field,0,3)=='cf_') {
 					$criteria = $this->_doSetCriteriaCustomField($field, substr($field,3));
 				}
 				break;
-			*/
 		}
 
 		if(!empty($criteria)) {
@@ -610,14 +606,13 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 				case 'example':
 					//$change_fields[DAO_TwitterMessage::EXAMPLE] = 'some value';
 					break;
-				/*
+					
 				default:
 					// Custom fields
 					if(substr($k,0,3)=="cf_") {
 						$custom_fields[substr($k,3)] = $v;
 					}
 					break;
-				*/
 			}
 		}
 
@@ -647,7 +642,7 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 			}
 
 			// Custom Fields
-			//self::_doBulkSetCustomFields(ChCustomFieldSource_TwitterMessage::ID, $custom_fields, $batch_ids);
+			self::_doBulkSetCustomFields('cerberusweb.contexts.twitter.message', $custom_fields, $batch_ids);
 			
 			unset($batch_ids);
 		}
