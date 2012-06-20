@@ -4,12 +4,34 @@ $logger = DevblocksPlatform::getConsoleLog();
 $tables = $db->metaTables();
 
 // ===========================================================================
-// twitter_message 
+// twitter_account
+
+if(!isset($tables['twitter_account'])) {
+	$sql = sprintf("
+		CREATE TABLE IF NOT EXISTS twitter_account (
+			id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+			twitter_id VARCHAR(128) DEFAULT '',
+			screen_name VARCHAR(128) DEFAULT '',
+			oauth_token VARCHAR(128) DEFAULT '',
+			oauth_token_secret VARCHAR(128) DEFAULT '',
+			last_synced_at INT UNSIGNED NOT NULL,
+			last_synced_msgid VARCHAR(128) DEFAULT '',
+			PRIMARY KEY (id)
+		) ENGINE=%s;
+	", APP_DB_ENGINE);
+	$db->Execute($sql);
+
+	$tables['twitter_account'] = 'twitter_account';
+}
+
+// ===========================================================================
+// twitter_message
 
 if(!isset($tables['twitter_message'])) {
 	$sql = sprintf("
 		CREATE TABLE IF NOT EXISTS twitter_message (
 			id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+			account_id INT UNSIGNED NOT NULL,
 			twitter_id VARCHAR(128) DEFAULT '',
 			twitter_user_id VARCHAR(128) DEFAULT '',
 			user_name VARCHAR(128) DEFAULT '',
@@ -20,7 +42,8 @@ if(!isset($tables['twitter_message'])) {
 			is_closed TINYINT UNSIGNED NOT NULL DEFAULT 0,
 			content VARCHAR(255) NOT NULL DEFAULT '',
 			PRIMARY KEY (id),
-			INDEX created_date (created_date)
+			INDEX created_date (created_date),
+			INDEX account_id (account_id)
 		) ENGINE=%s;
 	", APP_DB_ENGINE);
 	$db->Execute($sql);

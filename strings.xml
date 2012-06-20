@@ -11,7 +11,24 @@
 		</tu>
 		
 		<!-- TwitterMessage -->
+		<tu tuid='wgm.twitter.common.account'>
+			<tuv xml:lang="en_US"><seg>Twitter Account</seg></tuv>
+		</tu>
 		
+		<!-- Twitter Account -->
+		
+		<tu tuid='dao.twitter_account.screen_name'>
+			<tuv xml:lang="en_US"><seg>Screen Name</seg></tuv>
+		</tu>
+		<tu tuid='dao.twitter_account.oauth_token'>
+			<tuv xml:lang="en_US"><seg>Oauth Token</seg></tuv>
+		</tu>
+		<tu tuid='dao.twitter_account.last_synced_at'>
+			<tuv xml:lang="en_US"><seg>Last Synced At</seg></tuv>
+		</tu>
+		<tu tuid='dao.twitter_account.last_synced_msgid'>
+			<tuv xml:lang="en_US"><seg>Last Synced Message ID</seg></tuv>
+		</tu>
 		<tu tuid='dao.twitter_message.twitter_id'>
 			<tuv xml:lang="en_US"><seg>Twitter ID</seg></tuv>
 		</tu>

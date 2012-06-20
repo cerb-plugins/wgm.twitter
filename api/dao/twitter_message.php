@@ -1,6 +1,7 @@
 <?php
 class DAO_TwitterMessage extends C4_ORMHelper {
 	const ID = 'id';
+	const ACCOUNT_ID = 'account_id';
 	const TWITTER_ID = 'twitter_id';
 	const TWITTER_USER_ID = 'twitter_user_id';
 	const USER_NAME = 'user_name';
@@ -33,7 +34,7 @@ class DAO_TwitterMessage extends C4_ORMHelper {
 	static function updateWhere($fields, $where) {
 		parent::_updateWhere('twitter_message', $fields, $where);
 	}
-	
+
 	/**
 	 * @param string $where
 	 * @param mixed $sortBy
@@ -47,7 +48,7 @@ class DAO_TwitterMessage extends C4_ORMHelper {
 		list($where_sql, $sort_sql, $limit_sql) = self::_getWhereSQL($where, $sortBy, $sortAsc, $limit);
 		
 		// SQL
-		$sql = "SELECT id, twitter_id, twitter_user_id, user_name, user_screen_name, user_followers_count, user_profile_image_url, created_date, is_closed, content ".
+		$sql = "SELECT id, account_id, twitter_id, twitter_user_id, user_name, user_screen_name, user_followers_count, user_profile_image_url, created_date, is_closed, content ".
 			"FROM twitter_message ".
 			$where_sql.
 			$sort_sql.
@@ -83,6 +84,7 @@ class DAO_TwitterMessage extends C4_ORMHelper {
 		while($row = mysql_fetch_assoc($rs)) {
 			$object = new Model_TwitterMessage();
 			$object->id = $row['id'];
+			$object->account_id = $row['account_id'];
 			$object->twitter_id = $row['twitter_id'];
 			$object->twitter_user_id = $row['twitter_user_id'];
 			$object->user_name = $row['user_name'];
@@ -98,6 +100,20 @@ class DAO_TwitterMessage extends C4_ORMHelper {
 		mysql_free_result($rs);
 		
 		return $objects;
+	}
+	
+	static function deleteByAccounts($ids) {
+		if(!is_array($ids)) $ids = array($ids);
+		$db = DevblocksPlatform::getDatabaseService();
+		
+		if(empty($ids))
+			return;
+		
+		$ids_list = implode(',', $ids);
+		
+		$db->Execute(sprintf("DELETE FROM twitter_message WHERE accont_id IN (%s)", $ids_list));
+		
+		return true;
 	}
 	
 	static function delete($ids) {
@@ -139,6 +155,7 @@ class DAO_TwitterMessage extends C4_ORMHelper {
 		
 		$select_sql = sprintf("SELECT ".
 			"twitter_message.id as %s, ".
+			"twitter_message.account_id as %s, ".
 			"twitter_message.twitter_id as %s, ".
 			"twitter_message.twitter_user_id as %s, ".
 			"twitter_message.user_name as %s, ".
@@ -149,6 +166,7 @@ class DAO_TwitterMessage extends C4_ORMHelper {
 			"twitter_message.is_closed as %s, ".
 			"twitter_message.content as %s ",
 				SearchFields_TwitterMessage::ID,
+				SearchFields_TwitterMessage::ACCOUNT_ID,
 				SearchFields_TwitterMessage::TWITTER_ID,
 				SearchFields_TwitterMessage::TWITTER_USER_ID,
 				SearchFields_TwitterMessage::USER_NAME,
@@ -285,6 +303,7 @@ class DAO_TwitterMessage extends C4_ORMHelper {
 
 class SearchFields_TwitterMessage implements IDevblocksSearchFields {
 	const ID = 't_id';
+	const ACCOUNT_ID = 't_account_id';
 	const TWITTER_ID = 't_twitter_id';
 	const TWITTER_USER_ID = 't_twitter_user_id';
 	const USER_NAME = 't_user_name';
@@ -303,6 +322,7 @@ class SearchFields_TwitterMessage implements IDevblocksSearchFields {
 		
 		$columns = array(
 			self::ID => new DevblocksSearchField(self::ID, 'twitter_message', 'id', $translate->_('common.id'), null),
+			self::ACCOUNT_ID => new DevblocksSearchField(self::ACCOUNT_ID, 'twitter_message', 'account_id', $translate->_('dao.twitter_message.account_id'), null),
 			self::TWITTER_ID => new DevblocksSearchField(self::TWITTER_ID, 'twitter_message', 'twitter_id', $translate->_('dao.twitter_message.twitter_id'), null),
 			self::TWITTER_USER_ID => new DevblocksSearchField(self::TWITTER_USER_ID, 'twitter_message', 'twitter_user_id', $translate->_('dao.twitter_message.twitter_user_id'), null),
 			self::USER_NAME => new DevblocksSearchField(self::USER_NAME, 'twitter_message', 'user_name', $translate->_('dao.twitter_message.user_name'), Model_CustomField::TYPE_SINGLE_LINE),
@@ -332,6 +352,7 @@ class SearchFields_TwitterMessage implements IDevblocksSearchFields {
 
 class Model_TwitterMessage {
 	public $id;
+	public $account_id;
 	public $twitter_id;
 	public $twitter_user_id;
 	public $user_name;
@@ -350,8 +371,7 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 		$translate = DevblocksPlatform::getTranslationService();
 	
 		$this->id = self::DEFAULT_ID;
-		// [TODO] Name the worklist view
-		$this->name = $translate->_('TwitterMessage');
+		$this->name = $translate->_('Twitter Messages');
 		$this->renderLimit = 25;
 		$this->renderSortBy = SearchFields_TwitterMessage::ID;
 		$this->renderSortAsc = true;
@@ -359,6 +379,7 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 		$this->view_columns = array(
 			SearchFields_TwitterMessage::USER_NAME,
 			SearchFields_TwitterMessage::USER_FOLLOWERS_COUNT,
+			SearchFields_TwitterMessage::ACCOUNT_ID,
 			SearchFields_TwitterMessage::CREATED_DATE,
 		);
 		
@@ -474,6 +495,10 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 		$custom_fields = DAO_CustomField::getByContext('cerberusweb.contexts.twitter.message');
 		$tpl->assign('custom_fields', $custom_fields);
 
+		// Accounts
+		$twitter_accounts = DAO_TwitterAccount::getAll();
+		$tpl->assign('twitter_accounts', $twitter_accounts);
+		
 		$tpl->assign('view_template', 'devblocks:wgm.twitter::tweet/view.tpl');
 		$tpl->display('devblocks:cerberusweb.core::internal/views/subtotals_and_view.tpl');
 	}
@@ -505,6 +530,19 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 				$tpl->display('devblocks:cerberusweb.core::internal/views/criteria/__date.tpl');
 				break;
 				
+			case SearchFields_TwitterMessage::ACCOUNT_ID:
+				$options = array();
+
+				$accounts = DAO_TwitterAccount::getAll();
+				if(is_array($accounts))
+				foreach($accounts as $account) {
+					$options[$account->id] = $account->screen_name;
+				}
+				$tpl->assign('options', $options);
+				
+				$tpl->display('devblocks:cerberusweb.core::internal/views/criteria/__list.tpl');
+				break;
+				
 			default:
 				// Custom Fields
 				if('cf_' == substr($field,0,3)) {
@@ -523,6 +561,19 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 		switch($field) {
 			case SearchFields_TwitterMessage::IS_CLOSED:
 				parent::_renderCriteriaParamBoolean($param);
+				break;
+				
+			case SearchFields_TwitterMessage::ACCOUNT_ID:
+				$accounts = DAO_TwitterAccount::getAll();
+				$strings = array();
+				
+				foreach($values as $account_id) {
+					if(isset($accounts[$account_id]))
+						$strings[] = $accounts[$account_id]->screen_name;
+				}
+				
+				echo implode(' or ', $strings);
+				
 				break;
 			
 			default:
@@ -569,6 +620,12 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 			case SearchFields_TwitterMessage::IS_CLOSED:
 				@$bool = DevblocksPlatform::importGPC($_REQUEST['bool'],'integer',1);
 				$criteria = new DevblocksSearchCriteria($field,$oper,$bool);
+				break;
+				
+			case SearchFields_TwitterMessage::ACCOUNT_ID:
+				@$options = DevblocksPlatform::importGPC($_REQUEST['options'],'array',array());
+				$options = DevblocksPlatform::sanitizeArray($options, 'integer', array('nonzero','unique'));
+				$criteria = new DevblocksSearchCriteria($field,$oper,$options);
 				break;
 				
 			default:

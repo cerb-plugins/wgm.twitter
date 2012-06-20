@@ -16,7 +16,7 @@
 	<input type="text" name="consumer_key" value="{$params.consumer_key}" size="64"><br>
 	<br>
 	<b>Consumer secret:</b><br>
-	<input type="text" name="consumer_secret" value="{$params.consumer_secret}" size="64"><br>
+	<input type="password" name="consumer_secret" value="{$params.consumer_secret}" size="64"><br>
 	<br>
 	<div class="status"></div>
 
@@ -35,16 +35,9 @@
 	<input type="submit" class="submit" value="Sign in with Twitter">
 </fieldset>
 </form>
-{if !empty($params.users)}
-<fieldset>
-	<legend>Authorized Users</legend>
-	<ul>
-	{foreach $params.users as $user}
-	<li>{$user.screen_name}</li>
-	{/foreach}
-	</ul>
-</fieldset>
-{/if}
+
+{include file="devblocks:cerberusweb.core::internal/views/search_and_view.tpl" view=$view}
+
 <script type="text/javascript">
 $('#frmSetupTwitter BUTTON.submit')
 	.click(function(e) {

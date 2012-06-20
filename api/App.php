@@ -28,10 +28,25 @@ class WgmTwitter_SetupSection extends Extension_PageSection {
 		$params = array(
 			'consumer_key' => DevblocksPlatform::getPluginSetting('wgm.twitter','consumer_key',''),
 			'consumer_secret' => DevblocksPlatform::getPluginSetting('wgm.twitter','consumer_secret',''),
-			'users' => json_decode(DevblocksPlatform::getPluginSetting('wgm.twitter', 'users', ''), TRUE),
 		);
 		$tpl->assign('params', $params);
 		$tpl->assign('extensions', $extensions);
+		
+		// Worklist
+
+		$defaults = new C4_AbstractViewModel();
+		$defaults->id = 'setup_twitter_accounts';
+		$defaults->class_name = 'View_TwitterAccount';
+		$defaults->name = 'Authorized Accounts';
+		
+		if(null == ($view = C4_AbstractViewLoader::getView($defaults->id, $defaults)))
+			return;
+		
+		C4_AbstractViewLoader::setView($defaults->id, $view);
+
+		$tpl->assign('view', $view);
+		
+		// Template
 		
 		$tpl->display('devblocks:wgm.twitter::setup/index.tpl');
 	}
@@ -71,12 +86,28 @@ class WgmTwitter_SetupSection extends Extension_PageSection {
 				$twitter->setCredentials($_SESSION['oauth_token'], $_SESSION['oauth_token_secret']);
 				$user = $twitter->getAccessToken();
 				
-				$users = json_decode(DevblocksPlatform::getPluginSetting('wgm.twitter', 'users', ''), true);
-				$users[$user['user_id']] = $user;
+				$result = DAO_TwitterAccount::getByTwitterId($user['user_id']);
 				
-				DevblocksPlatform::setPluginSetting('wgm.twitter', 'users', json_encode($users));
-				DevblocksPlatform::redirect(new DevblocksHttpResponse(array('config','twitter')));
+				$fields = array(
+					DAO_TwitterAccount::TWITTER_ID => $user['user_id'],
+					DAO_TwitterAccount::SCREEN_NAME => $user['screen_name'],
+					DAO_TwitterAccount::OAUTH_TOKEN => $user['oauth_token'],
+					DAO_TwitterAccount::OAUTH_TOKEN_SECRET => $user['oauth_token_secret'],
+				);
+				
+				// Check UPDATE or CREATE
+
+				if(!empty($result)) {
+					$account_id = key($result);
+					DAO_TwitterAccount::update($account_id, $fields);
+					
+				} else {
+					$account_id = DAO_TwitterAccount::create($fields);
+				}
 			}
+			
+			DevblocksPlatform::redirect(new DevblocksHttpResponse(array('config','twitter')));
+			
 		} else {
 			try {
 				$request_token = $twitter->getRequestToken($oauth_callback_url);
@@ -93,6 +124,35 @@ class WgmTwitter_SetupSection extends Extension_PageSection {
 		}
 	}
 	
+	function showPeekPopupAction() {
+		@$id = DevblocksPlatform::importGPC($_REQUEST['id'], 'integer', 0);
+		@$view_id = DevblocksPlatform::importGPC($_REQUEST['view_id'], 'string', '');
+		
+		$tpl = DevblocksPlatform::getTemplateService();
+		
+		if(null == ($account = DAO_TwitterAccount::get($id)))
+			return;
+
+		$tpl->assign('account', $account);
+		
+		$tpl->assign('view_id', $view_id);
+		
+		$tpl->display('devblocks:wgm.twitter::account/peek.tpl');
+	}
+	
+	function savePeekPopupAction() {
+		@$id = DevblocksPlatform::importGPC($_REQUEST['id'], 'integer', 0);
+		@$do_delete = DevblocksPlatform::importGPC($_REQUEST['do_delete'], 'integer', 0);
+		
+		if(!empty($do_delete)) {
+			DAO_TwitterAccount::delete($id);
+			
+		} else {
+			
+		}
+		
+		return;
+	}
 };
 endif;
 
@@ -175,22 +235,25 @@ class Cron_WgmTwitterChecker extends CerberusCronPageExtension {
 
 		$twitter = WgmTwitter_API::getInstance();
 		
+		$accounts = DAO_TwitterAccount::getAll();
 		
-		$users = DevblocksPlatform::getPluginSetting('wgm.twitter', 'users');
-		$users = json_decode($users, TRUE);
-
-		foreach($users as $user_id => $user) {
-			$logger->info(sprintf("Checking mentions for @%s", $user['screen_name']));
+		foreach($accounts as $account) { /* @var $account Model_TwitterAccount */
+			$logger->info(sprintf("Checking mentions for @%s", $account->screen_name));
 			
 			try {
-				$twitter->setCredentials($user['oauth_token'], $user['oauth_token_secret']);
+				$twitter->setCredentials($account->oauth_token, $account->oauth_token_secret);
 				
-				$out = $twitter->get('https://api.twitter.com/1/statuses/mentions.json?count=100'); //&since_id=0
+				$twitter_url = 'https://api.twitter.com/1/statuses/mentions.json?count=150';
+				
+				if(!empty($account->last_synced_msgid))
+					$twitter_url .= sprintf("&since_id=%s", $account->last_synced_msgid);
+				
+				$out = $twitter->get($twitter_url);
 			
 				if(false !== ($json = @json_decode($out, true))) {
-					
 					foreach($json as $message) {
 						$fields = array(
+							DAO_TwitterMessage::ACCOUNT_ID => $account->id,
 							DAO_TwitterMessage::TWITTER_ID => $message['id_str'],
 							DAO_TwitterMessage::TWITTER_USER_ID => $message['user']['id_str'],
 							DAO_TwitterMessage::CREATED_DATE => strtotime($message['created_at']),
@@ -205,12 +268,19 @@ class Cron_WgmTwitterChecker extends CerberusCronPageExtension {
 						$tweet_id = DAO_TwitterMessage::create($fields);
 						
 						$logger->info(sprintf("Saved mention #%d from %s", $tweet_id, $message['user']['screen_name']));
-					}					
+					}
 					
-				} else {
+					$fields = array(
+						DAO_TwitterAccount::LAST_SYNCED_AT => time(),
+					);
 					
+					// Store the last message-id for incremental updates
+					if(null != ($msg = reset($json))) {
+						$fields[DAO_TwitterAccount::LAST_SYNCED_MSGID] = $msg['id_str'];
+					}
+					
+					DAO_TwitterAccount::update($account->id, $fields);
 				}
-				
 				
 			} catch(OAuthException $e) { /* @var $e Exception */
 				$logger->error($e->getMessage());
@@ -223,15 +293,9 @@ class Cron_WgmTwitterChecker extends CerberusCronPageExtension {
 	public function configure($instance) {
 		$tpl = DevblocksPlatform::getTemplateService();
 		$tpl->cache_lifetime = "0";
-
-		// [TODO] Load settings
-		
-		//$tpl->display('devblocks:wgm.twitter::cron/config.tpl');
 	}
 	
 	public function saveConfigurationAction() {
-		//@$example_waitdays = DevblocksPlatform::importGPC($_POST['example_waitdays'], 'integer');
-		//$this->setParam('example_waitdays', $example_waitdays);
 	}
 };
 endif;
@@ -244,31 +308,28 @@ class WgmTwitter_EventActionPost extends Extension_DevblocksEventAction {
 		
 		if(!is_null($seq))
 			$tpl->assign('namePrefix', 'action'.$seq);
-			
-		$users = DevblocksPlatform::getPluginSetting('wgm.twitter', 'users', '');
-		$users = json_decode($users, TRUE);
-		
-		$tpl->assign('users', $users);
+
+		$accounts = DAO_TwitterAccount::getAll();
+		$tpl->assign('twitter_accounts', $accounts);
 		
 		$tpl->display('devblocks:wgm.twitter::events/action_update_status_twitter.tpl');
 	}
 	
 	function simulate($token, Model_TriggerEvent $trigger, $params, DevblocksDictionaryDelegate $dict) {
-		$users = DevblocksPlatform::getPluginSetting('wgm.twitter', 'users');
-		$users = json_decode($users, TRUE);
+		$accounts = DAO_TwitterAccount::getAll();
 
-		@$user = $users[$params['user']];
-
-		if(empty($user) || !isset($user['screen_name'])) {
+		if(!isset($accounts[$params['user']])) {
 			return "[ERROR] No Twitter user selected.";
 		}
+		
+		$account = $accounts[$params['user']];
 		
 		// [TODO] Test Twitter API connection
 		
 		$tpl_builder = DevblocksPlatform::getTemplateBuilder();
 		if(false !== ($content = $tpl_builder->build($params['content'], $dict))) {
 			$out = sprintf(">>> Posting to Twitter for @%s:\n%s\n",
-				$user['screen_name'],
+				$account->screen_name,
 				$content
 			);
 		} else {
@@ -280,17 +341,21 @@ class WgmTwitter_EventActionPost extends Extension_DevblocksEventAction {
 	
 	function run($token, Model_TriggerEvent $trigger, $params, DevblocksDictionaryDelegate $dict) {
 		$twitter = WgmTwitter_API::getInstance();
-		
-		$users = DevblocksPlatform::getPluginSetting('wgm.twitter', 'users');
-		$users = json_decode($users, TRUE);
-		
-		$user = $users[$params['user']];
-		
+		$accounts = DAO_TwitterAccount::getAll();
+
+		if(null == ($account = @$accounts[$params['user']]))
+			return;
+	
 		// Translate message tokens
 		$tpl_builder = DevblocksPlatform::getTemplateBuilder();
 		if(false !== ($content = $tpl_builder->build($params['content'], $dict))) {
-			$twitter->setCredentials($user['oauth_token'], $user['oauth_token_secret']);
-			$twitter->post(WgmTwitter_API::TWITTER_UPDATE_STATUS_API, $content);
+			$twitter->setCredentials($account->oauth_token, $account->oauth_token_secret);
+			
+			$post_data = array(
+				'status' => $content,
+			);
+			
+			$twitter->post(WgmTwitter_API::TWITTER_UPDATE_STATUS_API, $post_data);
 			
 		}
 	}

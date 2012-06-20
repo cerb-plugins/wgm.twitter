@@ -24,7 +24,7 @@
 	<!-- Patches -->
 	
 	<patches>
-		<patch version="6.0.0" revision="1" file="patches/6.0.0.php" />
+		<patch version="6.0.0" revision="2" file="patches/6.0.0.php" />
 	</patches>
 
 	<!-- Exported Classes -->
@@ -32,6 +32,13 @@
  	<class_loader>
 		<file path="api/App.php">
 			<class name="WgmTwitter_API" />
+		</file>
+		
+		<file path="api/dao/twitter_account.php">
+			<class name="DAO_TwitterAccount" />
+			<class name="Model_TwitterAccount" />
+			<class name="SearchFields_TwitterAccount" />
+			<class name="View_TwitterAccount" />
 		</file>
 		
 		<file path="api/dao/twitter_message.php">

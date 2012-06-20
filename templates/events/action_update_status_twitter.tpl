@@ -1,9 +1,9 @@
-{if !empty($users)}
-<b>User:</b>
+{if !empty($twitter_accounts)}
+<b>Account:</b>
 <div style="margin-left:10px;margin-bottom:10px;">
 	<select name="{$namePrefix}[user]">
-	{foreach from=$users item=user}
-	<option value="{$user.user_id}" {if $params.user == $user.user_id}selected="selected"{/if}>{$user.screen_name}</option>
+	{foreach from=$twitter_accounts item=account}
+	<option value="{$account->id}" {if $params.user == $account->id}selected="selected"{/if}>{$account->screen_name}</option>
 	{/foreach}
 	</select>
 </div>
