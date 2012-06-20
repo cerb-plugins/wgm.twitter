@@ -2,9 +2,9 @@
 <plugin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.devblocks.com/schema/plugin.xsd">
 	<id>wgm.twitter</id>
 	<name>Twitter Integration</name>
-	<description>This plugin provides integration with Twitter via their API. This plugin is intended to be a bridge used by other plugins to communicate with Twitter services. It introduces record types for Twitter Messages.  In addition, it adds a new Virtual Attendant action with the ability to post status updates to Twitter.</description>
+	<description>This plugin provides integration with Twitter via their API. This plugin is intended to be a bridge used by other plugins to communicate with Twitter services. The plugin introduces record types for Twitter Accounts and Messages.  It supports multiple accounts;  @mentions are automatically synchronized and messages can be replied to from within Cerb.  In addition, it adds a new Virtual Attendant action with the ability to post status updates to Twitter.</description>
 	<author>WebGroup Media, LLC.</author>
-	<version>1.0.4</version>
+	<version>1.0.5</version>
 	<link>http://www.cerb6.com/</link>
 	<image>plugin.png</image>
  
