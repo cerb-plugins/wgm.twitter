@@ -181,14 +181,13 @@ class DAO_TwitterMessage extends C4_ORMHelper {
 		$join_sql = "FROM twitter_message ";
 		
 		// Custom field joins
-		//list($select_sql, $join_sql, $has_multiple_values) = self::_appendSelectJoinSqlForCustomFieldTables(
-		//	$tables,
-		//	$params,
-		//	'twitter_message.id',
-		//	$select_sql,
-		//	$join_sql
-		//);
-		$has_multiple_values = false; // [TODO] Temporary when custom fields disabled
+		list($select_sql, $join_sql, $has_multiple_values) = self::_appendSelectJoinSqlForCustomFieldTables(
+			$tables,
+			$params,
+			'twitter_message.id',
+			$select_sql,
+			$join_sql
+		);
 				
 		$where_sql = "".
 			(!empty($wheres) ? sprintf("WHERE %s ",implode(' AND ',$wheres)) : "WHERE 1 ");
@@ -659,9 +658,8 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 		if(is_array($do))
 		foreach($do as $k => $v) {
 			switch($k) {
-				// [TODO] Implement actions
-				case 'example':
-					//$change_fields[DAO_TwitterMessage::EXAMPLE] = 'some value';
+				case 'status':
+					$change_fields[DAO_TwitterMessage::IS_CLOSED] = !empty($v) ? 1 : 0;
 					break;
 					
 				default:

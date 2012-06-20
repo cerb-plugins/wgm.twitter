@@ -12,6 +12,184 @@ class WgmTwitter_SetupPluginsMenuItem extends Extension_PageMenuItem {
 endif;
 
 if(class_exists('Extension_PageSection')):
+class WgmTwitter_MessageProfileSection extends Extension_PageSection {
+	const ID = 'cerberusweb.profiles.twitter.message';
+	
+	function render() {
+	}
+	
+	function showPeekPopupAction() {
+		@$id = DevblocksPlatform::importGPC($_REQUEST['id'], 'integer', 0);
+		@$view_id = DevblocksPlatform::importGPC($_REQUEST['view_id'], 'string', '');
+		
+		$tpl = DevblocksPlatform::getTemplateService();
+		
+		$tpl->assign('view_id', $view_id);
+		
+		// Accounts
+
+		$accounts = DAO_TwitterAccount::getAll();
+		$tpl->assign('accounts', $accounts);
+		
+		// Message
+		
+		if(null != ($message = DAO_TwitterMessage::get($id))) {
+			$tpl->assign('message', $message);
+		}
+		
+		// Custom Fields
+		$custom_fields = DAO_CustomField::getByContext('cerberusweb.contexts.twitter.message');
+		$tpl->assign('custom_fields', $custom_fields);
+
+		$custom_field_values = DAO_CustomFieldValue::getValuesByContextIds('cerberusweb.contexts.twitter.message', $message->id);
+		if(isset($custom_field_values[$message->id]))
+			$tpl->assign('custom_field_values', $custom_field_values[$message->id]);
+		
+		$types = Model_CustomField::getTypes();
+		$tpl->assign('types', $types);
+		
+		// Template
+		
+		$tpl->display('devblocks:wgm.twitter::tweet/peek.tpl');		
+	}
+	
+	function savePeekPopupAction() {
+		@$id = DevblocksPlatform::importGPC($_REQUEST['id'], 'integer', 0);
+		@$do_reply = DevblocksPlatform::importGPC($_REQUEST['do_reply'], 'integer', 0);
+		@$reply = DevblocksPlatform::importGPC($_REQUEST['reply'], 'string', '');
+		@$is_closed = DevblocksPlatform::importGPC($_REQUEST['is_closed'], 'integer', 0);
+
+		// [TODO] Check privs
+		if(empty($id) || null == ($message = DAO_TwitterMessage::get($id)))
+			return;
+		
+		$fields = array(
+			DAO_TwitterMessage::IS_CLOSED => $is_closed ? 1 : 0,
+		);
+		
+		DAO_TwitterMessage::update($message->id, $fields);
+		
+		// Custom field saves
+		@$field_ids = DevblocksPlatform::importGPC($_POST['field_ids'], 'array', array());
+		DAO_CustomFieldValue::handleFormPost('cerberusweb.contexts.twitter.message', $message->id, $field_ids);
+		
+		// Replies
+		if(!empty($do_reply) && !empty($reply)) {
+			if(null != ($account = DAO_TwitterAccount::get($message->account_id))) {
+				$twitter = WgmTwitter_API::getInstance();
+				$twitter->setCredentials($account->oauth_token, $account->oauth_token_secret);
+				
+				$post_data = array(
+					'status' => $reply,
+					'in_reply_to_status_id' => $message->twitter_id,
+				);
+				
+				$twitter->post(WgmTwitter_API::TWITTER_UPDATE_STATUS_API, $post_data);
+			}
+		}
+	}
+	
+	function viewMarkClosedAction() {
+		@$view_id = DevblocksPlatform::importGPC($_REQUEST['view_id'],'string');
+		@$row_ids = DevblocksPlatform::importGPC($_REQUEST['row_id'],'array',array());
+
+		try {
+			if(is_array($row_ids))
+			foreach($row_ids as $row_id) {
+				$row_id = intval($row_id);
+				
+				if(!empty($row_id))
+					DAO_TwitterMessage::update($row_id, array(
+						DAO_TwitterMessage::IS_CLOSED => 1,
+					));
+			}
+		} catch (Exception $e) {
+			//
+		}
+		
+		$view = C4_AbstractViewLoader::getView($view_id);
+		$view->render();
+		
+		exit;
+	}
+	
+	function showBulkUpdatePopupAction() {
+		@$ids = DevblocksPlatform::importGPC($_REQUEST['ids']);
+		@$view_id = DevblocksPlatform::importGPC($_REQUEST['view_id']);
+
+		$active_worker = CerberusApplication::getActiveWorker();
+		
+		$tpl = DevblocksPlatform::getTemplateService();
+		$tpl->assign('view_id', $view_id);
+
+	    if(!empty($ids)) {
+	        $id_list = DevblocksPlatform::parseCsvString($ids);
+	        $tpl->assign('ids', implode(',', $id_list));
+	    }
+		
+	    $workers = DAO_Worker::getAllActive();
+	    $tpl->assign('workers', $workers);
+	    
+		// Custom Fields
+		$custom_fields = DAO_CustomField::getByContext('cerberusweb.contexts.twitter.message');
+		$tpl->assign('custom_fields', $custom_fields);
+		
+		$tpl->display('devblocks:wgm.twitter::tweet/bulk.tpl');
+	}
+	
+	function saveBulkUpdatePopupAction() {
+		// Filter: whole list or check
+	    @$filter = DevblocksPlatform::importGPC($_REQUEST['filter'],'string','');
+		$ids = array();
+	    
+	    // View
+		@$view_id = DevblocksPlatform::importGPC($_REQUEST['view_id'],'string');
+		$view = C4_AbstractViewLoader::getView($view_id);
+		
+		// Fields
+		@$status = trim(DevblocksPlatform::importGPC($_POST['status'],'string',''));
+
+		$do = array();
+		$active_worker = CerberusApplication::getActiveWorker();
+		
+		// Do: Status
+		if(0 != strlen($status)) {
+			switch($status) {
+				default:
+					$do['status'] = intval($status);
+					break;
+			}
+		}
+			
+		// Do: Custom fields
+		$do = DAO_CustomFieldValue::handleBulkPost($do);
+
+		switch($filter) {
+			// Checked rows
+			case 'checks':
+			    @$ids_str = DevblocksPlatform::importGPC($_REQUEST['ids'],'string');
+				$ids = DevblocksPlatform::parseCsvString($ids_str);
+				break;
+				
+			case 'sample':
+				@$sample_size = min(DevblocksPlatform::importGPC($_REQUEST['filter_sample_size'],'integer',0),9999);
+				$filter = 'checks';
+				$ids = $view->getDataSample($sample_size);
+				break;
+				
+			default:
+				break;
+		}
+		
+		$view->doBulkUpdate($filter, $do, $ids);
+		
+		$view->render();
+		return;
+	}	
+}
+endif;
+
+if(class_exists('Extension_PageSection')):
 class WgmTwitter_SetupSection extends Extension_PageSection {
 	const ID = 'wgmtwitter.setup.twitter';
 	
@@ -196,11 +374,7 @@ class WgmTwitter_API {
 		return $this->_oauth->getRequestToken(self::TWITTER_REQUEST_TOKEN_URL, $callback_url);
 	}
 	
-	public function post($url, $content) {
-		$params = array(
-			'status' => $content,		
-		);
-		
+	public function post($url, $params) {
 		return $this->_fetch($url, 'POST', $params);
 	}
 	
@@ -220,8 +394,6 @@ class WgmTwitter_API {
 		}
 
 		$this->_oauth->fetch($url, $params, $method);
-		
-		//var_dump($this->_oauth->getLastResponseInfo());
 		
 		return $this->_oauth->getLastResponse();
 	}

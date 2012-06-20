@@ -10,9 +10,12 @@
 			<tuv xml:lang="en_US"><seg>Twitter</seg></tuv>
 		</tu>
 		
-		<!-- TwitterMessage -->
 		<tu tuid='wgm.twitter.common.account'>
 			<tuv xml:lang="en_US"><seg>Twitter Account</seg></tuv>
+		</tu>
+		
+		<tu tuid='wgm.twitter.common.message'>
+			<tuv xml:lang="en_US"><seg>Twitter Message</seg></tuv>
 		</tu>
 		
 		<!-- Twitter Account -->
@@ -28,6 +31,12 @@
 		</tu>
 		<tu tuid='dao.twitter_account.last_synced_msgid'>
 			<tuv xml:lang="en_US"><seg>Last Synced Message ID</seg></tuv>
+		</tu>
+		
+		<!-- Twitter Message -->
+		
+		<tu tuid='dao.twitter_message.account_id'>
+			<tuv xml:lang="en_US"><seg>Account</seg></tuv>
 		</tu>
 		<tu tuid='dao.twitter_message.twitter_id'>
 			<tuv xml:lang="en_US"><seg>Twitter ID</seg></tuv>

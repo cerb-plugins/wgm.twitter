@@ -22,8 +22,10 @@
 <form id="viewForm{$view->id}" name="viewForm{$view->id}" action="{devblocks_url}{/devblocks_url}" method="post">
 <input type="hidden" name="view_id" value="{$view->id}">
 <input type="hidden" name="context_id" value="{$view_context}">
-<input type="hidden" name="c" value="example.objects">
-<input type="hidden" name="a" value="">
+<input type="hidden" name="c" value="profiles">
+<input type="hidden" name="a" value="handleSectionAction">
+<input type="hidden" name="section" value="twitter_message">
+<input type="hidden" name="action" value="viewMarkClosed">
 <input type="hidden" name="explore_from" value="0">
 <table cellpadding="1" cellspacing="0" border="0" width="100%" class="worklistBody">
 
@@ -64,11 +66,11 @@
 				<input type="checkbox" name="row_id[]" value="{$result.t_id}" style="display:none;">
 			</td>
 			<td colspan="{$smarty.foreach.headers.total}" style="font-size:100%;padding:5px 0px;">
-				<b class="subject" title="{$result.t_user_name}">{$result.t_user_screen_name}</b> 
+				<a class="subject" title="{$result.t_user_name}" href="http://twitter.com/{{$result.t_user_screen_name}}/status/{$result.t_twitter_id}" target="_blank">{$result.t_user_screen_name}</a> 
 				{$result.t_content|devblocks_hyperlinks nofilter}
 				
 				<a href="{devblocks_url}c=profiles&type=twitter_message&id={$result.t_id}{/devblocks_url}" class="subject">{$result.t_name}</a>
-				<button type="button" class="peek" style="visibility:hidden;padding:1px;margin:0px 5px;" onclick="genericAjaxPopup('peek','c=internal&a=showEntryPopup&id={$result.t_id}&view_id={$view->id}',null,false,'500');"><span class="cerb-sprite2 sprite-document-search-result" style="margin-left:2px" title="{$translate->_('views.peek')}"></span></button>
+				<button type="button" class="peek" style="visibility:hidden;padding:1px;margin:0px 5px;" onclick="genericAjaxPopup('peek','c=profiles&a=handleSectionAction&section=twitter_message&action=showPeekPopup&id={$result.t_id}&view_id={$view->id}',null,false,'500');"><span class="cerb-sprite2 sprite-document-search-result" style="margin-left:2px" title="{$translate->_('views.peek')}"></span></button>
 			</td>	
 		</tr>
 		
@@ -82,6 +84,13 @@
 					{if !empty($result.$column)}
 						{$result.$column|devblocks_prettytime}&nbsp;
 					{/if}
+				</td>
+			{elseif $column=="t_account_id"}
+				<td>
+				{$account = $twitter_accounts.{$result.$column}}
+				{if !empty($account)}
+				{$account->screen_name}
+				{/if}
 				</td>
 			{else}
 				<td>{$result.$column}</td>
@@ -119,8 +128,9 @@
 	<div style="float:left;" id="{$view->id}_actions">
 		{*
 		<button type="button" class="action-always-show action-explore" onclick="this.form.explore_from.value=$(this).closest('form').find('tbody input:checkbox:checked:first').val();this.form.a.value='viewExplore';this.form.submit();"><span class="cerb-sprite sprite-media_play_green"></span> {'common.explore'|devblocks_translate|lower}</button>
-		{if 1||$active_worker->hasPriv('example.actions.update_all')}<button type="button" class="action-always-show action-bulkupdate" onclick="genericAjaxPopup('peek','c=example.objects&a=showBulkUpdatePopup&view_id={$view->id}&ids=' + Devblocks.getFormEnabledCheckboxValues('viewForm{$view->id}','row_id[]'),null,false,'500');"><span class="cerb-sprite2 sprite-folder-gear"></span> {'common.bulk_update'|devblocks_translate|lower}</button>{/if}
 		*}
+		{if 1||$active_worker->hasPriv('example.actions.update_all')}<button type="button" class="action-always-show action-bulkupdate" onclick="genericAjaxPopup('peek','c=profiles&a=handleSectionAction&section=twitter_message&action=showBulkUpdatePopup&view_id={$view->id}&ids=' + Devblocks.getFormEnabledCheckboxValues('viewForm{$view->id}','row_id[]'),null,false,'500');"><span class="cerb-sprite2 sprite-folder-gear"></span> {'common.bulk_update'|devblocks_translate|lower}</button>{/if}
+		<button type="button" class="action-close" onclick="$frm=$(this).closest('form');$frm.find('input:hidden[name=action]').val('viewMarkClosed');genericAjaxPost($frm,'view{$view->id}',null);"><span class="cerb-sprite2 sprite-tick-circle"></span> {$translate->_('common.close')|lower}</button>
 	</div>
 	{/if}
 </div>
@@ -145,6 +155,17 @@ $frm.bind('keyboard_shortcut',function(event) {
 	switch(event.keypress_event.which) {
 		case 98: // (b) bulk update
 			$btn = $view_actions.find('button.action-bulkupdate');
+		
+			if(event.indirect) {
+				$btn.select().focus();
+				
+			} else {
+				$btn.click();
+			}
+			break;
+			
+		case 99: // (c) close
+			$btn = $view_actions.find('button.action-close');
 		
 			if(event.indirect) {
 				$btn.select().focus();

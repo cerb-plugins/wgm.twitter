@@ -108,6 +108,21 @@
 			</params>
 		</extension>
 		
+		<!-- Profile Page Sections -->
+		
+		<extension point="cerberusweb.ui.page.section">
+			<id>cerberusweb.profiles.twitter.message</id>
+			<name>Twitter Message Profile Section</name>
+			<class>
+				<file>api/App.php</file>
+				<name>WgmTwitter_MessageProfileSection</name>
+			</class>
+			<params>
+				<param key="page_id" value="core.page.profiles" />
+				<param key="uri" value="twitter_message" />
+			</params>
+		</extension>
+		
 		<!-- Scheduled Jobs -->
 		
 		<extension point="cerberusweb.cron">
