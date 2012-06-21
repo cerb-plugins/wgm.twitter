@@ -102,6 +102,10 @@ class DAO_TwitterMessage extends C4_ORMHelper {
 		return $objects;
 	}
 	
+	public static function random() {
+		return self::_getRandom('twitter_message');
+	}
+	
 	static function deleteByAccounts($ids) {
 		if(!is_array($ids)) $ids = array($ids);
 		$db = DevblocksPlatform::getDatabaseService();
@@ -410,6 +414,10 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 		return $objects;
 	}
 	
+	function getDataAsObjects($ids=null) {
+		return $this->_getDataAsObjects('DAO_TwitterMessage', $ids);
+	}
+	
 	function getDataSample($size) {
 		return $this->_doGetDataSample('DAO_TwitterMessage', $size);
 	}
@@ -710,7 +718,7 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 	const ID = 'cerberusweb.contexts.twitter.message';
 	
 	function getRandom() {
-		//return DAO_TwitterMessage::random();
+		return DAO_TwitterMessage::random();
 	}
 	
 	function getMeta($context_id) {
@@ -763,7 +771,7 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 		
 		if($tweet) {
 			$token_values['_loaded'] = true;
-			$token_values['_label'] = $tweet->content;
+			$token_values['_label'] = $tweet->user_screen_name . ': ' . $tweet->content;
 			$token_values['created'] = $tweet->created_date;
 			$token_values['id'] = $tweet->id;
 			$token_values['content'] = $tweet->content;
