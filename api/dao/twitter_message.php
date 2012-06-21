@@ -755,7 +755,13 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 			'content' => $prefix.$translate->_('common.content'),
 			'created|date' => $prefix.$translate->_('common.created'),
 			'id' => $prefix.$translate->_('common.id'),
-			//'name' => $prefix.$translate->_('common.name'),
+			'is_closed' => $prefix.$translate->_('dao.twitter_message.is_closed'),
+			'twitter_id' => $prefix.$translate->_('dao.twitter_message.twitter_id'),
+			'twitter_url' => $prefix.$translate->_('Twitter URL'),
+			'user_followers_count' => $prefix.$translate->_('dao.twitter_message.user_followers_count'),
+			'user_name' => $prefix.$translate->_('dao.twitter_message.user_name'),
+			'user_profile_image_url' => $prefix.$translate->_('dao.twitter_message.user_profile_image_url'),
+			'user_screen_name' => $prefix.$translate->_('dao.twitter_message.user_screen_name'),
 			//'record_url' => $prefix.$translate->_('common.url.record'),
 		);
 		
@@ -774,7 +780,14 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 			$token_values['_label'] = $tweet->user_screen_name . ': ' . $tweet->content;
 			$token_values['created'] = $tweet->created_date;
 			$token_values['id'] = $tweet->id;
+			$token_values['is_closed'] = $tweet->is_closed;
 			$token_values['content'] = $tweet->content;
+			$token_values['twitter_id'] = $tweet->twitter_id;
+			$token_values['twitter_url'] = sprintf("http://twitter.com/%s/status/%s", $tweet->user_screen_name, $tweet->twitter_id);
+			$token_values['user_followers_count'] = $tweet->user_followers_count;
+			$token_values['user_name'] = $tweet->user_name;
+			$token_values['user_profile_image_url'] = $tweet->user_profile_image_url;
+			$token_values['user_screen_name'] = $tweet->user_screen_name;
 			
 			// URL
 			//$url_writer = DevblocksPlatform::getUrlService();
