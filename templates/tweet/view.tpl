@@ -66,6 +66,7 @@
 				<input type="checkbox" name="row_id[]" value="{$result.t_id}" style="display:none;">
 			</td>
 			<td colspan="{$smarty.foreach.headers.total}" style="font-size:100%;padding:5px 0px;">
+				{if $result.t_is_closed}<span class="cerb-sprite2 sprite-tick-circle-gray"></span>{/if}
 				<a class="subject" title="{$result.t_user_name}" href="http://twitter.com/{{$result.t_user_screen_name}}/status/{$result.t_twitter_id}" target="_blank">{$result.t_user_screen_name}</a> 
 				{$result.t_content|devblocks_hyperlinks nofilter}
 				
