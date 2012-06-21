@@ -314,13 +314,13 @@ class SearchFields_TwitterAccount implements IDevblocksSearchFields {
 		$translate = DevblocksPlatform::getTranslationService();
 		
 		$columns = array(
-			self::ID => new DevblocksSearchField(self::ID, 'twitter_account', 'id', $translate->_('dao.twitter_account.id')),
+			self::ID => new DevblocksSearchField(self::ID, 'twitter_account', 'id', $translate->_('dao.twitter_account.id'), null),
 			self::TWITTER_ID => new DevblocksSearchField(self::ID, 'twitter_account', 'twitter_id', null),
-			self::SCREEN_NAME => new DevblocksSearchField(self::SCREEN_NAME, 'twitter_account', 'screen_name', $translate->_('dao.twitter_account.screen_name')),
-			self::OAUTH_TOKEN => new DevblocksSearchField(self::OAUTH_TOKEN, 'twitter_account', 'oauth_token', null),
-			self::OAUTH_TOKEN_SECRET => new DevblocksSearchField(self::OAUTH_TOKEN_SECRET, 'twitter_account', 'oauth_token_secret', null),
-			self::LAST_SYNCED_AT => new DevblocksSearchField(self::LAST_SYNCED_AT, 'twitter_account', 'last_synced_at', $translate->_('dao.twitter_account.last_synced_at')),
-			self::LAST_SYNCED_MSGID => new DevblocksSearchField(self::LAST_SYNCED_MSGID, 'twitter_account', 'last_synced_msgid', $translate->_('dao.twitter_account.last_synced_msgid')),
+			self::SCREEN_NAME => new DevblocksSearchField(self::SCREEN_NAME, 'twitter_account', 'screen_name', $translate->_('dao.twitter_account.screen_name'), Model_CustomField::TYPE_SINGLE_LINE),
+			self::OAUTH_TOKEN => new DevblocksSearchField(self::OAUTH_TOKEN, 'twitter_account', 'oauth_token', null, null),
+			self::OAUTH_TOKEN_SECRET => new DevblocksSearchField(self::OAUTH_TOKEN_SECRET, 'twitter_account', 'oauth_token_secret', null, null),
+			self::LAST_SYNCED_AT => new DevblocksSearchField(self::LAST_SYNCED_AT, 'twitter_account', 'last_synced_at', $translate->_('dao.twitter_account.last_synced_at'), Model_CustomField::TYPE_DATE),
+			self::LAST_SYNCED_MSGID => new DevblocksSearchField(self::LAST_SYNCED_MSGID, 'twitter_account', 'last_synced_msgid', $translate->_('dao.twitter_account.last_synced_msgid'), null),
 		);
 		
 		// Custom Fields
