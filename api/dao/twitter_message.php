@@ -115,7 +115,7 @@ class DAO_TwitterMessage extends C4_ORMHelper {
 		
 		$ids_list = implode(',', $ids);
 		
-		$db->Execute(sprintf("DELETE FROM twitter_message WHERE accont_id IN (%s)", $ids_list));
+		$db->Execute(sprintf("DELETE FROM twitter_message WHERE account_id IN (%s)", $ids_list));
 		
 		return true;
 	}
