@@ -1,4 +1,4 @@
-Cerb6 Plugins - wgm.twitter
+Cerb Plugins - wgm.twitter
 ===========================================
 Copyright (C) 2012 WebGroup Media, LLC.  
 [http://www.cerberusweb.com/](http://www.cerberusweb.com/)  
