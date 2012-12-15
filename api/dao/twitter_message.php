@@ -25,10 +25,42 @@ class DAO_TwitterMessage extends C4_ORMHelper {
 	}
 	
 	static function update($ids, $fields) {
-		parent::_update($ids, 'twitter_message', $fields);
+		if(!is_array($ids))
+			$ids = array($ids);
 		
-		// Log the context update
-	    DevblocksPlatform::markContextChanged('cerberusweb.contexts.twitter.message', $ids);
+		// Make a diff for the requested objects in batches
+		
+		$chunks = array_chunk($ids, 100, true);
+		while($batch_ids = array_shift($chunks)) {
+			if(empty($batch_ids))
+				continue;
+			
+			// Get state before changes
+			$object_changes = parent::_getUpdateDeltas($batch_ids, $fields, get_class());
+
+			// Make changes
+			parent::_update($batch_ids, 'twitter_message', $fields);
+			
+			// Send events
+			if(!empty($object_changes)) {
+				// Local events
+				//self::_processUpdateEvents($object_changes);
+				
+				// Trigger an event about the changes
+				$eventMgr = DevblocksPlatform::getEventService();
+				$eventMgr->trigger(
+					new Model_DevblocksEvent(
+						'dao.twitter_message.update',
+						array(
+							'objects' => $object_changes,
+						)
+					)
+				);
+				
+				// Log the context update
+				DevblocksPlatform::markContextChanged('cerberusweb.contexts.twitter.message', $batch_ids);
+			}
+		}
 	}
 	
 	static function updateWhere($fields, $where) {
@@ -266,7 +298,7 @@ class DAO_TwitterMessage extends C4_ORMHelper {
 		$has_multiple_values = $query_parts['has_multiple_values'];
 		$sort_sql = $query_parts['sort'];
 		
-		$sql = 
+		$sql =
 			$select_sql.
 			$join_sql.
 			$where_sql.
@@ -294,7 +326,7 @@ class DAO_TwitterMessage extends C4_ORMHelper {
 
 		// [JAS]: Count all
 		if($withCounts) {
-			$count_sql = 
+			$count_sql =
 				($has_multiple_values ? "SELECT COUNT(DISTINCT twitter_message.id) " : "SELECT COUNT(twitter_message.id) ").
 				$join_sql.
 				$where_sql;
@@ -353,7 +385,7 @@ class SearchFields_TwitterMessage implements IDevblocksSearchFields {
 		// Sort by label (translation-conscious)
 		DevblocksPlatform::sortObjects($columns, 'db_label');
 
-		return $columns;		
+		return $columns;
 	}
 };
 
@@ -493,7 +525,7 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 		}
 		
 		return $counts;
-	}	
+	}
 
 	function render() {
 		$this->_sanitize();
@@ -715,7 +747,7 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 		}
 
 		unset($ids);
-	}			
+	}
 };
 
 class Context_TwitterMessage extends Extension_DevblocksContext {
@@ -833,7 +865,7 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 		}
 		
 		return $values;
-	}	
+	}
 	
 	function getChooserView($view_id=null) {
 		$active_worker = CerberusApplication::getActiveWorker();
@@ -867,7 +899,7 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 		$view_id = str_replace('.','_',$this->id);
 		
 		$defaults = new C4_AbstractViewModel();
-		$defaults->id = $view_id; 
+		$defaults->id = $view_id;
 		$defaults->class_name = $this->getViewClass();
 		$view = C4_AbstractViewLoader::getView($view_id, $defaults);
 		
