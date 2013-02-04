@@ -61,4 +61,25 @@ if(null != ($cron = DevblocksPlatform::getExtension('wgmtwitter.cron', true, tru
 	$cron->setParam(CerberusCronPageExtension::PARAM_LASTRUN, strtotime('Yesterday 23:45'));
 }
 
+// ===========================================================================
+// Fix MySQL strict_mode issue (missing default values)
+
+if(!isset($tables['twitter_message']))
+	return FALSE;
+
+list($columns, $indexes) = $db->metaTable('twitter_message');
+
+if(isset($columns['account_id'])) {
+	$db->Execute("ALTER TABLE twitter_message MODIFY COLUMN account_id INT UNSIGNED NOT NULL DEFAULT 0");
+}
+
+if(!isset($tables['twitter_account']))
+	return FALSE;
+
+list($columns, $indexes) = $db->metaTable('twitter_account');
+
+if(isset($columns['last_synced_at'])) {
+	$db->Execute("ALTER TABLE twitter_account MODIFY COLUMN last_synced_at INT UNSIGNED NOT NULL DEFAULT 0");
+}
+
 return TRUE;
