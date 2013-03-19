@@ -18,6 +18,7 @@ class WgmTwitter_MessageProfileSection extends Extension_PageSection {
 	function render() {
 	}
 	
+	// [TODO] This should be handled by the context
 	function showPeekPopupAction() {
 		@$id = DevblocksPlatform::importGPC($_REQUEST['id'], 'integer', 0);
 		@$view_id = DevblocksPlatform::importGPC($_REQUEST['view_id'], 'string', '');
@@ -50,7 +51,7 @@ class WgmTwitter_MessageProfileSection extends Extension_PageSection {
 		
 		// Template
 		
-		$tpl->display('devblocks:wgm.twitter::tweet/peek.tpl');		
+		$tpl->display('devblocks:wgm.twitter::tweet/peek.tpl');
 	}
 	
 	function savePeekPopupAction() {
@@ -185,7 +186,7 @@ class WgmTwitter_MessageProfileSection extends Extension_PageSection {
 		
 		$view->render();
 		return;
-	}	
+	}
 }
 endif;
 
@@ -362,7 +363,7 @@ class WgmTwitter_API {
 		return self::$_instance;
 	}
 	
-	public function setCredentials($token, $secret) {		
+	public function setCredentials($token, $secret) {
 		$this->_oauth->setToken($token, $secret);
 	}
 	

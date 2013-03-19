@@ -1,5 +1,5 @@
 <?php
-class DAO_TwitterMessage extends C4_ORMHelper {
+class DAO_TwitterMessage extends Cerb_ORMHelper {
 	const ID = 'id';
 	const ACCOUNT_ID = 'account_id';
 	const TWITTER_ID = 'twitter_id';

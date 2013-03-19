@@ -1,5 +1,5 @@
 <?php
-class DAO_TwitterAccount extends C4_ORMHelper {
+class DAO_TwitterAccount extends Cerb_ORMHelper {
 	const _CACHE_ALL = 'twitter_accounts_all';
 	
 	const ID = 'id';
