@@ -39,7 +39,7 @@ class WgmTwitter_MessageProfileSection extends Extension_PageSection {
 		}
 		
 		// Custom Fields
-		$custom_fields = DAO_CustomField::getByContext('cerberusweb.contexts.twitter.message');
+		$custom_fields = DAO_CustomField::getByContext('cerberusweb.contexts.twitter.message', false);
 		$tpl->assign('custom_fields', $custom_fields);
 
 		$custom_field_values = DAO_CustomFieldValue::getValuesByContextIds('cerberusweb.contexts.twitter.message', $message->id);
