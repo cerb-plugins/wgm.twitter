@@ -259,13 +259,17 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 		if(!is_a($param, 'DevblocksSearchCriteria'))
 			return;
 			
-		//$from_context = CerberusContexts::CONTEXT_EXAMPLE;
-		//$from_index = 'example.id';
+		$from_context = 'cerberusweb.contexts.twitter.message';
+		$from_index = 'twitter_message.id';
 		
 		$param_key = $param->field;
 		settype($param_key, 'string');
 		
 		switch($param_key) {
+			case SearchFields_TwitterMessage::VIRTUAL_HAS_FIELDSET:
+				self::_searchComponentsVirtualHasFieldset($param, $from_context, $from_index, $args['join_sql'], $args['where_sql']);
+				break;
+			
 			/*
 			case SearchFields_EXAMPLE::VIRTUAL_WATCHERS:
 				$args['has_multiple_values'] = true;
@@ -354,6 +358,8 @@ class SearchFields_TwitterMessage implements IDevblocksSearchFields {
 	const IS_CLOSED = 't_is_closed';
 	const CONTENT = 't_content';
 	
+	const VIRTUAL_HAS_FIELDSET = '*_has_fieldset';
+	
 	/**
 	 * @return DevblocksSearchField[]
 	 */
@@ -372,16 +378,18 @@ class SearchFields_TwitterMessage implements IDevblocksSearchFields {
 			self::CREATED_DATE => new DevblocksSearchField(self::CREATED_DATE, 'twitter_message', 'created_date', $translate->_('common.created'), Model_CustomField::TYPE_DATE),
 			self::IS_CLOSED => new DevblocksSearchField(self::IS_CLOSED, 'twitter_message', 'is_closed', $translate->_('dao.twitter_message.is_closed'), Model_CustomField::TYPE_CHECKBOX),
 			self::CONTENT => new DevblocksSearchField(self::CONTENT, 'twitter_message', 'content', $translate->_('common.content'), Model_CustomField::TYPE_MULTI_LINE),
+				
+			self::VIRTUAL_HAS_FIELDSET => new DevblocksSearchField(self::VIRTUAL_HAS_FIELDSET, '*', 'has_fieldset', $translate->_('common.fieldset'), null),
 		);
 		
-		// Custom Fields
-		$fields = DAO_CustomField::getByContext('cerberusweb.contexts.twitter.message');
-
-		if(is_array($fields))
-		foreach($fields as $field_id => $field) {
-			$key = 'cf_'.$field_id;
-			$columns[$key] = new DevblocksSearchField($key,$key,'field_value',$field->name,$field->type);
-		}
+		// Custom fields with fieldsets
+		
+		$custom_columns = DevblocksSearchField::getCustomSearchFieldsByContexts(array(
+			'cerberusweb.contexts.twitter.message',
+		));
+		
+		if(is_array($custom_columns))
+			$columns = array_merge($columns, $custom_columns);
 		
 		// Sort by label (translation-conscious)
 		DevblocksPlatform::sortObjects($columns, 'db_label');
@@ -427,6 +435,7 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 			SearchFields_TwitterMessage::ID,
 			SearchFields_TwitterMessage::TWITTER_ID,
 			SearchFields_TwitterMessage::TWITTER_USER_ID,
+			SearchFields_TwitterMessage::VIRTUAL_HAS_FIELDSET,
 		));
 		
 		$this->addParamsHidden(array(
@@ -460,7 +469,7 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 	}
 	
 	function getSubtotalFields() {
-		$all_fields = $this->getParamsAvailable();
+		$all_fields = $this->getParamsAvailable(true);
 		
 		$fields = array();
 
@@ -477,9 +486,9 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 					break;
 					
 				// Virtuals
-// 				case SearchFields_TwitterMessage::VIRTUAL_CONTEXT_LINK:
-// 					$pass = true;
-// 					break;
+ 				case SearchFields_TwitterMessage::VIRTUAL_HAS_FIELDSET:
+ 					$pass = true;
+ 					break;
 					
 				// Valid custom fields
 				default:
@@ -512,9 +521,9 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 				$counts = $this->_getSubtotalCountForStringColumn('DAO_TwitterMessage', $column);
 				break;
 				
-// 			case SearchFields_TwitterMessage::VIRTUAL_CONTEXT_LINK:
-// 				$counts = $this->_getSubtotalCountForContextLinkColumn('DAO_TwitterMessage', 'cerberusweb.contexts.twitter.message', $column);
-// 				break;
+			case SearchFields_TwitterMessage::VIRTUAL_HAS_FIELDSET:
+				$counts = $this->_getSubtotalCountForHasFieldsetColumn('DAO_TwitterMessage', 'cerberusweb.contexts.twitter.message', $column);
+				break;
 				
 			default:
 				// Custom fields
@@ -587,6 +596,10 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 				$tpl->display('devblocks:cerberusweb.core::internal/views/criteria/__list.tpl');
 				break;
 				
+			case SearchFields_TwitterMessage::VIRTUAL_HAS_FIELDSET:
+				$this->_renderCriteriaHasFieldset($tpl, 'cerberusweb.contexts.twitter.message');
+				break;
+				
 			default:
 				// Custom Fields
 				if('cf_' == substr($field,0,3)) {
@@ -632,6 +645,9 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 		$translate = DevblocksPlatform::getTranslationService();
 		
 		switch($key) {
+			case SearchFields_TwitterMessage::VIRTUAL_HAS_FIELDSET:
+				$this->_renderVirtualHasFieldset($param);
+				break;
 		}
 	}
 
@@ -670,6 +686,11 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 				@$options = DevblocksPlatform::importGPC($_REQUEST['options'],'array',array());
 				$options = DevblocksPlatform::sanitizeArray($options, 'integer', array('nonzero','unique'));
 				$criteria = new DevblocksSearchCriteria($field,$oper,$options);
+				break;
+				
+			case SearchFields_TwitterMessage::VIRTUAL_HAS_FIELDSET:
+				@$options = DevblocksPlatform::importGPC($_REQUEST['options'],'array',array());
+				$criteria = new DevblocksSearchCriteria($field,DevblocksSearchCriteria::OPER_IN,$options);
 				break;
 				
 			default:
@@ -802,11 +823,10 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 			//'record_url' => $prefix.$translate->_('common.url.record'),
 		);
 		
-		if(is_array($fields))
-		foreach($fields as $cf_id => $field) {
-			$token_labels['custom_'.$cf_id] = $prefix.$field->name;
-		}
-
+		// Custom field/fieldset token labels
+		if(false !== ($custom_field_labels = $this->_getTokenLabelsFromCustomFields($fields, $prefix)) && is_array($custom_field_labels))
+			$token_labels = array_merge($token_labels, $custom_field_labels);
+		
 		// Token values
 		$token_values = array();
 		

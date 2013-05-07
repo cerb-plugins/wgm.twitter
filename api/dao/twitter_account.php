@@ -360,14 +360,14 @@ class SearchFields_TwitterAccount implements IDevblocksSearchFields {
 			self::LAST_SYNCED_MSGID => new DevblocksSearchField(self::LAST_SYNCED_MSGID, 'twitter_account', 'last_synced_msgid', $translate->_('dao.twitter_account.last_synced_msgid'), null),
 		);
 		
-		// Custom Fields
-		//$fields = DAO_CustomField::getByContext(CerberusContexts::XXX);
-
-		//if(is_array($fields))
-		//foreach($fields as $field_id => $field) {
-		//	$key = 'cf_'.$field_id;
-		//	$columns[$key] = new DevblocksSearchField($key,$key,'field_value',$field->name,$field->type);
-		//}
+		// Custom fields with fieldsets
+		
+		$custom_columns = DevblocksSearchField::getCustomSearchFieldsByContexts(array(
+			'cerberusweb.contexts.twitter.account',
+		));
+		
+		if(is_array($custom_columns))
+			$columns = array_merge($columns, $custom_columns);
 		
 		// Sort by label (translation-conscious)
 		DevblocksPlatform::sortObjects($columns, 'db_label');

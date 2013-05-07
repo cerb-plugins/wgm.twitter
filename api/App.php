@@ -123,16 +123,16 @@ class WgmTwitter_MessageProfileSection extends Extension_PageSection {
 		$tpl = DevblocksPlatform::getTemplateService();
 		$tpl->assign('view_id', $view_id);
 
-	    if(!empty($ids)) {
-	        $id_list = DevblocksPlatform::parseCsvString($ids);
-	        $tpl->assign('ids', implode(',', $id_list));
-	    }
+		if(!empty($ids)) {
+			$id_list = DevblocksPlatform::parseCsvString($ids);
+			$tpl->assign('ids', implode(',', $id_list));
+		}
 		
-	    $workers = DAO_Worker::getAllActive();
-	    $tpl->assign('workers', $workers);
-	    
+		$workers = DAO_Worker::getAllActive();
+		$tpl->assign('workers', $workers);
+		
 		// Custom Fields
-		$custom_fields = DAO_CustomField::getByContext('cerberusweb.contexts.twitter.message');
+		$custom_fields = DAO_CustomField::getByContext('cerberusweb.contexts.twitter.message', false);
 		$tpl->assign('custom_fields', $custom_fields);
 		
 		$tpl->display('devblocks:wgm.twitter::tweet/bulk.tpl');
@@ -140,10 +140,10 @@ class WgmTwitter_MessageProfileSection extends Extension_PageSection {
 	
 	function saveBulkUpdatePopupAction() {
 		// Filter: whole list or check
-	    @$filter = DevblocksPlatform::importGPC($_REQUEST['filter'],'string','');
+		@$filter = DevblocksPlatform::importGPC($_REQUEST['filter'],'string','');
 		$ids = array();
-	    
-	    // View
+		
+		// View
 		@$view_id = DevblocksPlatform::importGPC($_REQUEST['view_id'],'string');
 		$view = C4_AbstractViewLoader::getView($view_id);
 		
@@ -168,7 +168,7 @@ class WgmTwitter_MessageProfileSection extends Extension_PageSection {
 		switch($filter) {
 			// Checked rows
 			case 'checks':
-			    @$ids_str = DevblocksPlatform::importGPC($_REQUEST['ids'],'string');
+				@$ids_str = DevblocksPlatform::importGPC($_REQUEST['ids'],'string');
 				$ids = DevblocksPlatform::parseCsvString($ids_str);
 				break;
 				
@@ -241,8 +241,8 @@ class WgmTwitter_SetupSection extends Extension_PageSection {
 			DevblocksPlatform::setPluginSetting('wgm.twitter','consumer_key',$consumer_key);
 			DevblocksPlatform::setPluginSetting('wgm.twitter','consumer_secret',$consumer_secret);
 			
-		    echo json_encode(array('status'=>true,'message'=>'Saved!'));
-		    return;
+			echo json_encode(array('status'=>true,'message'=>'Saved!'));
+			return;
 			
 		} catch (Exception $e) {
 			echo json_encode(array('status'=>false,'error'=>$e->getMessage()));
