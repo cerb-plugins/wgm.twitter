@@ -339,9 +339,9 @@ class WgmTwitter_API {
 	const TWITTER_REQUEST_TOKEN_URL = "https://api.twitter.com/oauth/request_token";
 	const TWITTER_AUTHENTICATE_URL = "https://api.twitter.com/oauth/authenticate";
 	const TWITTER_ACCESS_TOKEN_URL = "https://api.twitter.com/oauth/access_token";
-	const TWITTER_PUBLIC_TIMELINE_API = "https://api.twitter.com/1/statuses/public_timeline.json";
-	const TWITTER_UPDATE_STATUS_API = "https://api.twitter.com/1/statuses/update.json";
-	const TWITTER_STATUSES_MENTIONS_API = "https://api.twitter.com/1/statuses/mentions.json";
+	const TWITTER_PUBLIC_TIMELINE_API = "https://api.twitter.com/1.1/statuses/home_timeline.json";
+	const TWITTER_UPDATE_STATUS_API = "https://api.twitter.com/1.1/statuses/update.json";
+	const TWITTER_STATUSES_MENTIONS_API = "https://api.twitter.com/1.1/statuses/mentions_timeline.json";
 	
 	static $_instance = null;
 	private $_oauth = null;
@@ -416,7 +416,7 @@ class Cron_WgmTwitterChecker extends CerberusCronPageExtension {
 			try {
 				$twitter->setCredentials($account->oauth_token, $account->oauth_token_secret);
 				
-				$twitter_url = 'https://api.twitter.com/1/statuses/mentions.json?count=150';
+				$twitter_url = WgmTwitter_API::TWITTER_STATUSES_MENTIONS_API . '?count=150';
 				
 				if(!empty($account->last_synced_msgid))
 					$twitter_url .= sprintf("&since_id=%s", $account->last_synced_msgid);
