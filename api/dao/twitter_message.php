@@ -792,6 +792,17 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 		);
 	}
 	
+	// [TODO] Interface
+	function getDefaultProperties() {
+		return array(
+			'created',
+			'user_name',
+			'user_screen_name',
+			'user_followers_count',
+			'is_closed',
+		);
+	}
+	
 	function getContext($tweet, &$token_labels, &$token_values, $prefix=null) {
 		if(is_null($prefix))
 			$prefix = 'Twitter Message:';
@@ -810,8 +821,9 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 		
 		// Token labels
 		$token_labels = array(
+			'_label' => $prefix,
 			'content' => $prefix.$translate->_('common.content'),
-			'created|date' => $prefix.$translate->_('common.created'),
+			'created' => $prefix.$translate->_('common.created'),
 			'id' => $prefix.$translate->_('common.id'),
 			'is_closed' => $prefix.$translate->_('dao.twitter_message.is_closed'),
 			'twitter_id' => $prefix.$translate->_('dao.twitter_message.twitter_id'),
@@ -823,6 +835,22 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 			//'record_url' => $prefix.$translate->_('common.url.record'),
 		);
 		
+		// Token types
+		$token_types = array(
+			'_label' => 'context_url',
+			'content' => Model_CustomField::TYPE_SINGLE_LINE,
+			'created' => Model_CustomField::TYPE_DATE,
+			'id' => Model_CustomField::TYPE_NUMBER,
+			'is_closed' => Model_CustomField::TYPE_CHECKBOX,
+			'twitter_id' => Model_CustomField::TYPE_NUMBER,
+			'twitter_url' => Model_CustomField::TYPE_URL,
+			'user_followers_count' => Model_CustomField::TYPE_NUMBER,
+			'user_name' => Model_CustomField::TYPE_SINGLE_LINE,
+			'user_profile_image_url' => Model_CustomField::TYPE_URL,
+			'user_screen_name' => Model_CustomField::TYPE_SINGLE_LINE,
+			//'record_url' => Model_CustomField::TYPE_URL,
+		);
+		
 		// Custom field/fieldset token labels
 		if(false !== ($custom_field_labels = $this->_getTokenLabelsFromCustomFields($fields, $prefix)) && is_array($custom_field_labels))
 			$token_labels = array_merge($token_labels, $custom_field_labels);
@@ -831,6 +859,7 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 		$token_values = array();
 		
 		$token_values['_context'] = Context_TwitterMessage::ID;
+		$token_values['_types'] = $token_types;
 		
 		if($tweet) {
 			$token_values['_loaded'] = true;
