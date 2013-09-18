@@ -37,8 +37,8 @@
 </fieldset>
 
 <div class="toolbar">
-	<button type="button" class="submit" onclick="genericAjaxPopupPostCloseReloadView(null,'frmTwitterAcct','{$view_id}',false,'example_object_save');"><span class="cerb-sprite2 sprite-tick-circle"></span> {$translate->_('common.save_changes')|capitalize}</button>
-	{if $account->id}<button type="button" onclick="$toolbar=$(this).closest('div.toolbar').fadeOut();$toolbar.siblings('fieldset.delete').fadeIn();"><span class="cerb-sprite2 sprite-minus-circle"></span> {$translate->_('common.delete')|capitalize}</button>{/if}
+	<button type="button" class="submit" onclick="genericAjaxPopupPostCloseReloadView(null,'frmTwitterAcct','{$view_id}',false,'example_object_save');"><span class="cerb-sprite2 sprite-tick-circle"></span> {'common.save_changes'|devblocks_translate|capitalize}</button>
+	{if $account->id}<button type="button" onclick="$toolbar=$(this).closest('div.toolbar').fadeOut();$toolbar.siblings('fieldset.delete').fadeIn();"><span class="cerb-sprite2 sprite-minus-circle"></span> {'common.delete'|devblocks_translate|capitalize}</button>{/if}
 </div>
 
 </form>
