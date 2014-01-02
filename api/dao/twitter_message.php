@@ -877,6 +877,10 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 		if(false !== ($custom_field_labels = $this->_getTokenLabelsFromCustomFields($fields, $prefix)) && is_array($custom_field_labels))
 			$token_labels = array_merge($token_labels, $custom_field_labels);
 		
+		// Custom field/fieldset token types
+		if(false !== ($custom_field_types = $this->_getTokenTypesFromCustomFields($fields, $prefix)) && is_array($custom_field_types))
+			$token_types = array_merge($token_types, $custom_field_types);
+		
 		// Token values
 		$token_values = array();
 		
@@ -930,7 +934,7 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 				
 			default:
 				if(substr($token,0,7) == 'custom_') {
-					$fields = $this->_lazyLoadCustomFields($context, $context_id);
+					$fields = $this->_lazyLoadCustomFields($token, $context, $context_id);
 					$values = array_merge($values, $fields);
 				}
 				break;
