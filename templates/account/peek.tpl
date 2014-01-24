@@ -46,7 +46,7 @@
 <script type="text/javascript">
 	$popup = genericAjaxPopupFetch('peek');
 	$popup.one('popup_open', function(event,ui) {
-		$(this).dialog('option','title',"{'wgm.twitter.common.account'|devblocks_translate|capitalize}");
+		$(this).dialog('option','title',"{'wgm.twitter.common.account'|devblocks_translate|capitalize|escape:'javascript' nofilter}");
 		$(this).find('input:text:first').select().focus();
 	});
 </script>

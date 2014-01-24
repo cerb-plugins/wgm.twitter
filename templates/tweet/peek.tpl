@@ -57,7 +57,7 @@
 	$popup = genericAjaxPopupFetch('peek');
 	$popup.one('popup_open', function(event,ui) {
 		{$account = $accounts.{$message->account_id}}
-		$(this).dialog('option','title',"{'wgm.twitter.common.message'|devblocks_translate|capitalize}{if !empty($account)} @{$account->screen_name}{/if}");
+		$(this).dialog('option','title',"{'wgm.twitter.common.message'|devblocks_translate|capitalize|escape:'javascript' nofilter}{if !empty($account)} @{$account->screen_name|escape:'javascript' nofilter}{/if}");
 		
 		var $txt = $(this).find('textarea:first');
 		$txt.elastic();
