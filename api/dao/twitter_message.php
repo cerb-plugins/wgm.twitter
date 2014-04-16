@@ -35,16 +35,16 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 			if(empty($batch_ids))
 				continue;
 			
-			// Get state before changes
-			$object_changes = parent::_getUpdateDeltas($batch_ids, $fields, get_class());
-
+			// Send events
+			if($check_deltas) {
+				CerberusContexts::checkpointChanges('cerberusweb.contexts.twitter.message', $batch_ids);
+			}
+			
 			// Make changes
 			parent::_update($batch_ids, 'twitter_message', $fields);
 			
 			// Send events
-			if(!empty($object_changes)) {
-				// Local events
-				//self::_processUpdateEvents($object_changes);
+			if($check_deltas) {
 				
 				// Trigger an event about the changes
 				$eventMgr = DevblocksPlatform::getEventService();
@@ -52,7 +52,7 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 					new Model_DevblocksEvent(
 						'dao.twitter_message.update',
 						array(
-							'objects' => $object_changes,
+							'fields' => $fields,
 						)
 					)
 				);
@@ -165,17 +165,17 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 		
 		// Fire event
 		/*
-	    $eventMgr = DevblocksPlatform::getEventService();
-	    $eventMgr->trigger(
-	        new Model_DevblocksEvent(
-	            'context.delete',
-                array(
-                	'context' => 'cerberusweb.contexts.',
-                	'context_ids' => $ids
-                )
-            )
-	    );
-	    */
+		$eventMgr = DevblocksPlatform::getEventService();
+		$eventMgr->trigger(
+			new Model_DevblocksEvent(
+				'context.delete',
+				array(
+					'context' => 'cerberusweb.contexts.',
+					'context_ids' => $ids
+				)
+			)
+		);
+		*/
 		
 		return true;
 	}
@@ -187,7 +187,7 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 		if('*'==substr($sortBy,0,1) || !isset($fields[$sortBy]))
 			$sortBy=null;
 
-        list($tables,$wheres) = parent::_parseSearchParams($params, $columns, $fields, $sortBy);
+		list($tables,$wheres) = parent::_parseSearchParams($params, $columns, $fields, $sortBy);
 		
 		$select_sql = sprintf("SELECT ".
 			"twitter_message.id as %s, ".
@@ -279,19 +279,19 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 		}
 	}
 	
-    /**
-     * Enter description here...
-     *
-     * @param array $columns
-     * @param DevblocksSearchCriteria[] $params
-     * @param integer $limit
-     * @param integer $page
-     * @param string $sortBy
-     * @param boolean $sortAsc
-     * @param boolean $withCounts
-     * @return array
-     */
-    static function search($columns, $params, $limit=10, $page=0, $sortBy=null, $sortAsc=null, $withCounts=true) {
+	/**
+	 * Enter description here...
+	 *
+	 * @param array $columns
+	 * @param DevblocksSearchCriteria[] $params
+	 * @param integer $limit
+	 * @param integer $page
+	 * @param string $sortBy
+	 * @param boolean $sortAsc
+	 * @param boolean $withCounts
+	 * @return array
+	 */
+	static function search($columns, $params, $limit=10, $page=0, $sortBy=null, $sortAsc=null, $withCounts=true) {
 		$db = DevblocksPlatform::getDatabaseService();
 		
 		// Build search queries
@@ -311,14 +311,13 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 			$sort_sql;
 			
 		if($limit > 0) {
-    		$rs = $db->SelectLimit($sql,$limit,$page*$limit) or die(__CLASS__ . '('.__LINE__.')'. ':' . $db->ErrorMsg()); /* @var $rs ADORecordSet */
+			$rs = $db->SelectLimit($sql,$limit,$page*$limit) or die(__CLASS__ . '('.__LINE__.')'. ':' . $db->ErrorMsg()); /* @var $rs ADORecordSet */
 		} else {
-		    $rs = $db->Execute($sql) or die(__CLASS__ . '('.__LINE__.')'. ':' . $db->ErrorMsg()); /* @var $rs ADORecordSet */
-            $total = mysqli_num_rows($rs);
+			$rs = $db->Execute($sql) or die(__CLASS__ . '('.__LINE__.')'. ':' . $db->ErrorMsg()); /* @var $rs ADORecordSet */
+			$total = mysqli_num_rows($rs);
 		}
 		
 		$results = array();
-		$total = -1;
 		
 		while($row = mysqli_fetch_assoc($rs)) {
 			$result = array();
@@ -329,13 +328,17 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 			$results[$object_id] = $result;
 		}
 
-		// [JAS]: Count all
+		$total = count($results);
+		
 		if($withCounts) {
-			$count_sql =
-				($has_multiple_values ? "SELECT COUNT(DISTINCT twitter_message.id) " : "SELECT COUNT(twitter_message.id) ").
-				$join_sql.
-				$where_sql;
-			$total = $db->GetOne($count_sql);
+			// We can skip counting if we have a less-than-full single page
+			if(!(0 == $page && $total < $limit)) {
+				$count_sql =
+					($has_multiple_values ? "SELECT COUNT(DISTINCT twitter_message.id) " : "SELECT COUNT(twitter_message.id) ").
+					$join_sql.
+					$where_sql;
+				$total = $db->GetOne($count_sql);
+			}
 		}
 		
 		mysqli_free_result($rs);
@@ -837,6 +840,8 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 			$tweet = DAO_TwitterMessage::get($tweet);
 		} elseif($tweet instanceof Model_TwitterMessage) {
 			// It's what we want already.
+		} elseif(is_array($tweet)) {
+			$tweet = Cerb_ORMHelper::recastArrayToModel($tweet, 'Model_TwitterMessage');
 		} else {
 			$tweet = null;
 		}
@@ -900,6 +905,9 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 			$token_values['user_name'] = $tweet->user_name;
 			$token_values['user_profile_image_url'] = $tweet->user_profile_image_url;
 			$token_values['user_screen_name'] = $tweet->user_screen_name;
+			
+			// Custom fields
+			$token_values = $this->_importModelCustomFieldsAsValues($tweet, $token_values);
 			
 			// URL
 			//$url_writer = DevblocksPlatform::getUrlService();
