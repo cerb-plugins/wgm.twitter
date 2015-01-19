@@ -411,7 +411,7 @@ class Model_TwitterMessage {
 	public $content;
 };
 
-class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subtotals {
+class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subtotals, IAbstractView_QuickSearch {
 	const DEFAULT_ID = 'twittermessage';
 
 	function __construct() {
@@ -534,6 +534,109 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 		}
 		
 		return $counts;
+	}
+	
+	function getQuickSearchFields() {
+		$fields = array(
+			'_fulltext' => 
+				array(
+					'type' => DevblocksSearchCriteria::TYPE_TEXT,
+					'options' => array('param_key' => SearchFields_TwitterMessage::CONTENT, 'match' => DevblocksSearchCriteria::OPTION_TEXT_PARTIAL),
+				),
+			'account' => 
+				array(
+					'type' => DevblocksSearchCriteria::TYPE_VIRTUAL,
+					'options' => array('param_key' => SearchFields_TwitterMessage::ACCOUNT_ID),
+					'examples' => array(
+						'cerb',
+					),
+			),
+			'content' => 
+				array(
+					'type' => DevblocksSearchCriteria::TYPE_TEXT,
+					'options' => array('param_key' => SearchFields_TwitterMessage::CONTENT, 'match' => DevblocksSearchCriteria::OPTION_TEXT_PARTIAL),
+				),
+			'created' => 
+				array(
+					'type' => DevblocksSearchCriteria::TYPE_DATE,
+					'options' => array('param_key' => SearchFields_TwitterMessage::CREATED_DATE),
+				),
+			'isClosed' => 
+				array(
+					'type' => DevblocksSearchCriteria::TYPE_BOOL,
+					'options' => array('param_key' => SearchFields_TwitterMessage::IS_CLOSED),
+				),
+			'followers' => 
+				array(
+					'type' => DevblocksSearchCriteria::TYPE_NUMBER,
+					'options' => array('param_key' => SearchFields_TwitterMessage::USER_FOLLOWERS_COUNT),
+				),
+			'screenName' => 
+				array(
+					'type' => DevblocksSearchCriteria::TYPE_TEXT,
+					'options' => array('param_key' => SearchFields_TwitterMessage::USER_SCREEN_NAME, 'match' => DevblocksSearchCriteria::OPTION_TEXT_PARTIAL),
+				),
+			'userName' => 
+				array(
+					'type' => DevblocksSearchCriteria::TYPE_TEXT,
+					'options' => array('param_key' => SearchFields_TwitterMessage::USER_NAME, 'match' => DevblocksSearchCriteria::OPTION_TEXT_PARTIAL),
+				),
+		);
+		
+		// Add searchable custom fields
+		
+		$fields = self::_appendFieldsFromQuickSearchContext('cerberusweb.contexts.twitter.message', $fields, null);
+		
+		// Sort by keys
+		
+		ksort($fields);
+		
+		return $fields;
+	}	
+	
+	function getParamsFromQuickSearchFields($fields) {
+		$search_fields = $this->getQuickSearchFields();
+		$params = DevblocksSearchCriteria::getParamsFromQueryFields($fields, $search_fields);
+
+		// Handle virtual fields and overrides
+		if(is_array($fields))
+		foreach($fields as $k => $v) {
+			switch($k) {
+				case 'account':
+					$field_keys = array(
+						'account' => SearchFields_TwitterMessage::ACCOUNT_ID,
+					);
+					
+					@$field_key = $field_keys[$k];
+					
+					$oper = DevblocksSearchCriteria::OPER_IN;
+					
+					$patterns = DevblocksPlatform::parseCsvString($v);
+					$accounts = DAO_TwitterAccount::getAll();
+					$values = array();
+					
+					if(is_array($patterns))
+					foreach($patterns as $pattern) {
+						foreach($accounts as $account_id => $account) {
+							if(false !== stripos($account->screen_name, $pattern))
+								$values[$account_id] = true;
+						}
+					}
+					
+					$param = new DevblocksSearchCriteria(
+						$field_key,
+						$oper,
+						array_keys($values)
+					);
+					$params[$field_key] = $param;					
+					break;
+			}
+		}
+		
+		$this->renderPage = 0;
+		$this->addParams($params, true);
+		
+		return $params;
 	}
 
 	function render() {

@@ -1,9 +1,18 @@
-<h2>{'wgm.twitter.common'|devblocks_translate}</h2>
+<div style="float:left;">
+	<h2>{'wgm.twitter.common'|devblocks_translate}</h2>
+</div>
+
+<div style="float:right;">
+	{include file="devblocks:cerberusweb.core::search/quick_search.tpl" view=$view return_url=null reset=false}
+</div>
+
+<br clear="all">
+
 {if !$extensions.oauth}
 <b>The oauth extension is not installed.</b>
 {else}
 
-
+{* [TODO] Move this to an 'add' popup on the worklist *}
 <fieldset>
 	<legend>Twitter Application</legend>
 	
