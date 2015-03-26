@@ -109,6 +109,7 @@ class WgmTwitter_MessageProfileSection extends Extension_PageSection {
 		}
 		
 		$view = C4_AbstractViewLoader::getView($view_id);
+		$view->setAutoPersist(false);
 		$view->render();
 		
 		exit;
@@ -146,6 +147,7 @@ class WgmTwitter_MessageProfileSection extends Extension_PageSection {
 		// View
 		@$view_id = DevblocksPlatform::importGPC($_REQUEST['view_id'],'string');
 		$view = C4_AbstractViewLoader::getView($view_id);
+		$view->setAutoPersist(false);
 		
 		// Fields
 		@$status = trim(DevblocksPlatform::importGPC($_POST['status'],'string',''));
@@ -221,8 +223,6 @@ class WgmTwitter_SetupSection extends Extension_PageSection {
 		if(null == ($view = C4_AbstractViewLoader::getView($defaults->id, $defaults)))
 			return;
 		
-		C4_AbstractViewLoader::setView($defaults->id, $view);
-
 		$tpl->assign('view', $view);
 		
 		// Template

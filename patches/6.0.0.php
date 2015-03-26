@@ -19,7 +19,7 @@ if(!isset($tables['twitter_account'])) {
 			PRIMARY KEY (id)
 		) ENGINE=%s;
 	", APP_DB_ENGINE);
-	$db->Execute($sql);
+	$db->ExecuteMaster($sql);
 
 	$tables['twitter_account'] = 'twitter_account';
 }
@@ -46,7 +46,7 @@ if(!isset($tables['twitter_message'])) {
 			INDEX account_id (account_id)
 		) ENGINE=%s;
 	", APP_DB_ENGINE);
-	$db->Execute($sql);
+	$db->ExecuteMaster($sql);
 
 	$tables['twitter_message'] = 'twitter_message';
 }
@@ -70,7 +70,7 @@ if(!isset($tables['twitter_message']))
 list($columns, $indexes) = $db->metaTable('twitter_message');
 
 if(isset($columns['account_id'])) {
-	$db->Execute("ALTER TABLE twitter_message MODIFY COLUMN account_id INT UNSIGNED NOT NULL DEFAULT 0");
+	$db->ExecuteMaster("ALTER TABLE twitter_message MODIFY COLUMN account_id INT UNSIGNED NOT NULL DEFAULT 0");
 }
 
 if(!isset($tables['twitter_account']))
@@ -79,7 +79,7 @@ if(!isset($tables['twitter_account']))
 list($columns, $indexes) = $db->metaTable('twitter_account');
 
 if(isset($columns['last_synced_at'])) {
-	$db->Execute("ALTER TABLE twitter_account MODIFY COLUMN last_synced_at INT UNSIGNED NOT NULL DEFAULT 0");
+	$db->ExecuteMaster("ALTER TABLE twitter_account MODIFY COLUMN last_synced_at INT UNSIGNED NOT NULL DEFAULT 0");
 }
 
 return TRUE;

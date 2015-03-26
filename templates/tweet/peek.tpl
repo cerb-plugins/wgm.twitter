@@ -60,7 +60,7 @@
 		$(this).dialog('option','title',"{'wgm.twitter.common.message'|devblocks_translate|capitalize|escape:'javascript' nofilter}{if !empty($account)} @{$account->screen_name|escape:'javascript' nofilter}{/if}");
 		
 		var $txt = $(this).find('textarea:first');
-		$txt.elastic();
+		$txt.autosize();
 		
 		$(this).find('input:checkbox[name=do_reply]').click(function(e) {
 			if($(this).is(':checked')) {
