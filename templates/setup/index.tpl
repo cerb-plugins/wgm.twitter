@@ -41,7 +41,7 @@
 					<input type="password" name="consumer_secret" value="" size="45">
 				</td>
 				<td>
-					<button type="button" class="submit"><span class="cerb-sprite2 sprite-tick-circle"></span> {'common.save_changes'|devblocks_translate|capitalize}</button>	
+					<button type="button" class="submit"><span class="glyphicons glyphicons-circle-ok" style="color:rgb(0,180,0);"></span> {'common.save_changes'|devblocks_translate|capitalize}</button>	
 				</td>
 			</tr>
 		</table>
