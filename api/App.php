@@ -215,9 +215,8 @@ class WgmTwitter_SetupSection extends Extension_PageSection {
 		
 		// Worklist
 
-		$defaults = new C4_AbstractViewModel();
+		$defaults = C4_AbstractViewModel::loadFromClass('View_TwitterAccount');
 		$defaults->id = 'setup_twitter_accounts';
-		$defaults->class_name = 'View_TwitterAccount';
 		$defaults->name = 'Authorized Accounts';
 		
 		if(null == ($view = C4_AbstractViewLoader::getView($defaults->id, $defaults)))
