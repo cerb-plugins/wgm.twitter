@@ -5,6 +5,7 @@
 <input type="hidden" name="action" value="savePeekPopup">
 <input type="hidden" name="id" value="{$message->id}">
 <input type="hidden" name="view_id" value="{$view_id}">
+<input type="hidden" name="_csrf_token" value="{$session.csrf_token}">
 
 <table width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:10px;">
 	<tr>
