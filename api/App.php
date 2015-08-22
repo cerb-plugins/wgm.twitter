@@ -257,7 +257,7 @@ class WgmTwitter_SetupSection extends Extension_PageSection {
 		$twitter = WgmTwitter_API::getInstance();
 		
 		$url = DevblocksPlatform::getUrlService();
-		$oauth_callback_url = $url->write('ajax.php?c=config&a=handleSectionAction&section=twitter&action=auth&_callback=true', true);
+		$oauth_callback_url = $url->write('ajax.php?c=config&a=handleSectionAction&section=twitter&action=auth&_callback=true&_csrf_token=' . $_SESSION['csrf_token'], true);
 		
 		if($callback) {
 			if(!$denied) {
