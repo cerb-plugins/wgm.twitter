@@ -4,14 +4,14 @@
 	<name>Twitter Integration</name>
 	<description>This plugin provides integration with Twitter via their API. This plugin is intended to be a bridge used by other plugins to communicate with Twitter services. The plugin introduces record types for Twitter Accounts and Messages.  It supports multiple accounts;  @mentions are automatically synchronized and messages can be replied to from within Cerb.  In addition, it adds a new Virtual Attendant action with the ability to post status updates to Twitter.</description>
 	<author>Webgroup Media, LLC.</author>
-	<version>1.1.30</version>
+	<version>1.1.31</version>
 	<link>http://www.cerbweb.com/book/latest/plugins/wgm.twitter.html</link>
 	<image>plugin.png</image>
  
  	<!-- Requirements -->
 
 	<requires>
-		<app_version min="7.0.3" max="7.0.99" />
+		<app_version min="7.1" max="7.1.99" />
 		<php_extension name="oauth" />
 	</requires>
  
@@ -64,6 +64,15 @@
 				<name>Context_TwitterMessage</name>
 			</class>
 			<params>
+				<param key="names">
+					<value>
+						<data key="twitter message" value="singular" />
+						<data key="twitter messages" value="plural" />
+						<data key="tweet" value="singular short" />
+						<data key="tweets" value="plural short" />
+						<data key="twitter" value="singular proper" />
+					</value>
+				</param>
 				<param key="alias" value="twitter_message" />
 				<param key="dao_class" value="DAO_TwitterMessage" />
 				<param key="view_class" value="View_TwitterMessage" />

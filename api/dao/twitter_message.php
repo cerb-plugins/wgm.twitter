@@ -731,7 +731,7 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 				
 				foreach($values as $account_id) {
 					if(isset($accounts[$account_id]))
-						$strings[] = $accounts[$account_id]->screen_name;
+						$strings[] = DevblocksPlatform::strEscapeHtml($accounts[$account_id]->screen_name);
 				}
 				
 				echo implode(' or ', $strings);
