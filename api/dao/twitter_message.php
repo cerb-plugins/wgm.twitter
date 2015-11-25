@@ -894,6 +894,7 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 			'id' => $tweet->id,
 			'name' => $tweet->content,
 			'permalink' => $url_writer->writeNoProxy(sprintf("c=profiles&=type=twitter_message&id=%d",$context_id), true),
+			'updated' => $tweet->created_date,
 		);
 	}
 	
