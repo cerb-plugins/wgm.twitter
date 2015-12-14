@@ -186,10 +186,6 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 	public static function getSearchQueryComponents($columns, $params, $sortBy=null, $sortAsc=null) {
 		$fields = SearchFields_TwitterMessage::getFields();
 		
-		// Sanitize
-		if('*'==substr($sortBy,0,1) || !isset($fields[$sortBy]))
-			$sortBy=null;
-
 		list($tables,$wheres) = parent::_parseSearchParams($params, $columns, $fields, $sortBy);
 		
 		$select_sql = sprintf("SELECT ".
@@ -231,7 +227,7 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 		$where_sql = "".
 			(!empty($wheres) ? sprintf("WHERE %s ",implode(' AND ',$wheres)) : "WHERE 1 ");
 			
-		$sort_sql = (!empty($sortBy)) ? sprintf("ORDER BY %s %s ",$sortBy,($sortAsc || is_null($sortAsc))?"ASC":"DESC") : " ";
+		$sort_sql = self::_buildSortClause($sortBy, $sortAsc, $fields);
 	
 		// Virtuals
 		
@@ -369,19 +365,19 @@ class SearchFields_TwitterMessage implements IDevblocksSearchFields {
 		$translate = DevblocksPlatform::getTranslationService();
 		
 		$columns = array(
-			self::ID => new DevblocksSearchField(self::ID, 'twitter_message', 'id', $translate->_('common.id'), null),
-			self::ACCOUNT_ID => new DevblocksSearchField(self::ACCOUNT_ID, 'twitter_message', 'account_id', $translate->_('dao.twitter_message.account_id'), null),
-			self::TWITTER_ID => new DevblocksSearchField(self::TWITTER_ID, 'twitter_message', 'twitter_id', $translate->_('dao.twitter_message.twitter_id'), null),
-			self::TWITTER_USER_ID => new DevblocksSearchField(self::TWITTER_USER_ID, 'twitter_message', 'twitter_user_id', $translate->_('dao.twitter_message.twitter_user_id'), null),
-			self::USER_NAME => new DevblocksSearchField(self::USER_NAME, 'twitter_message', 'user_name', $translate->_('dao.twitter_message.user_name'), Model_CustomField::TYPE_SINGLE_LINE),
-			self::USER_SCREEN_NAME => new DevblocksSearchField(self::USER_SCREEN_NAME, 'twitter_message', 'user_screen_name', $translate->_('dao.twitter_message.user_screen_name'), Model_CustomField::TYPE_SINGLE_LINE),
-			self::USER_FOLLOWERS_COUNT => new DevblocksSearchField(self::USER_FOLLOWERS_COUNT, 'twitter_message', 'user_followers_count', $translate->_('dao.twitter_message.user_followers_count'), Model_CustomField::TYPE_NUMBER),
-			self::USER_PROFILE_IMAGE_URL => new DevblocksSearchField(self::USER_PROFILE_IMAGE_URL, 'twitter_message', 'user_profile_image_url', $translate->_('dao.twitter_message.user_profile_image_url'), null),
-			self::CREATED_DATE => new DevblocksSearchField(self::CREATED_DATE, 'twitter_message', 'created_date', $translate->_('common.created'), Model_CustomField::TYPE_DATE),
-			self::IS_CLOSED => new DevblocksSearchField(self::IS_CLOSED, 'twitter_message', 'is_closed', $translate->_('dao.twitter_message.is_closed'), Model_CustomField::TYPE_CHECKBOX),
-			self::CONTENT => new DevblocksSearchField(self::CONTENT, 'twitter_message', 'content', $translate->_('common.content'), Model_CustomField::TYPE_MULTI_LINE),
+			self::ID => new DevblocksSearchField(self::ID, 'twitter_message', 'id', $translate->_('common.id'), null, true),
+			self::ACCOUNT_ID => new DevblocksSearchField(self::ACCOUNT_ID, 'twitter_message', 'account_id', $translate->_('dao.twitter_message.account_id'), null, true),
+			self::TWITTER_ID => new DevblocksSearchField(self::TWITTER_ID, 'twitter_message', 'twitter_id', $translate->_('dao.twitter_message.twitter_id'), null, true),
+			self::TWITTER_USER_ID => new DevblocksSearchField(self::TWITTER_USER_ID, 'twitter_message', 'twitter_user_id', $translate->_('dao.twitter_message.twitter_user_id'), null, true),
+			self::USER_NAME => new DevblocksSearchField(self::USER_NAME, 'twitter_message', 'user_name', $translate->_('dao.twitter_message.user_name'), Model_CustomField::TYPE_SINGLE_LINE, true),
+			self::USER_SCREEN_NAME => new DevblocksSearchField(self::USER_SCREEN_NAME, 'twitter_message', 'user_screen_name', $translate->_('dao.twitter_message.user_screen_name'), Model_CustomField::TYPE_SINGLE_LINE, true),
+			self::USER_FOLLOWERS_COUNT => new DevblocksSearchField(self::USER_FOLLOWERS_COUNT, 'twitter_message', 'user_followers_count', $translate->_('dao.twitter_message.user_followers_count'), Model_CustomField::TYPE_NUMBER, true),
+			self::USER_PROFILE_IMAGE_URL => new DevblocksSearchField(self::USER_PROFILE_IMAGE_URL, 'twitter_message', 'user_profile_image_url', $translate->_('dao.twitter_message.user_profile_image_url'), null, true),
+			self::CREATED_DATE => new DevblocksSearchField(self::CREATED_DATE, 'twitter_message', 'created_date', $translate->_('common.created'), Model_CustomField::TYPE_DATE, true),
+			self::IS_CLOSED => new DevblocksSearchField(self::IS_CLOSED, 'twitter_message', 'is_closed', $translate->_('dao.twitter_message.is_closed'), Model_CustomField::TYPE_CHECKBOX, true),
+			self::CONTENT => new DevblocksSearchField(self::CONTENT, 'twitter_message', 'content', $translate->_('common.content'), Model_CustomField::TYPE_MULTI_LINE, true),
 				
-			self::VIRTUAL_HAS_FIELDSET => new DevblocksSearchField(self::VIRTUAL_HAS_FIELDSET, '*', 'has_fieldset', $translate->_('common.fieldset'), null),
+			self::VIRTUAL_HAS_FIELDSET => new DevblocksSearchField(self::VIRTUAL_HAS_FIELDSET, '*', 'has_fieldset', $translate->_('common.fieldset'), null, false),
 		);
 		
 		// Custom fields with fieldsets
@@ -540,6 +536,8 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 	}
 	
 	function getQuickSearchFields() {
+		$search_fields = SearchFields_TwitterMessage::getFields();
+		
 		$fields = array(
 			'_fulltext' => 
 				array(
@@ -590,6 +588,10 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 		
 		$fields = self::_appendFieldsFromQuickSearchContext('cerberusweb.contexts.twitter.message', $fields, null);
 		
+		// Add is_sortable
+		
+		$fields = self::_setSortableQuickSearchFields($fields, $search_fields);
+		
 		// Sort by keys
 		
 		ksort($fields);
@@ -631,13 +633,10 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 						$oper,
 						array_keys($values)
 					);
-					$params[$field_key] = $param;					
+					$params[$field_key] = $param;
 					break;
 			}
 		}
-		
-		$this->renderPage = 0;
-		$this->addParams($params, true);
 		
 		return $params;
 	}

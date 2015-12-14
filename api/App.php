@@ -185,7 +185,6 @@ class WgmTwitter_MessageProfileSection extends Extension_PageSection {
 		}
 		
 		$view->doBulkUpdate($filter, $do, $ids);
-		
 		$view->render();
 		return;
 	}

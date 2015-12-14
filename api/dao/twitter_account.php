@@ -193,10 +193,6 @@ class DAO_TwitterAccount extends Cerb_ORMHelper {
 	public static function getSearchQueryComponents($columns, $params, $sortBy=null, $sortAsc=null) {
 		$fields = SearchFields_TwitterAccount::getFields();
 		
-		// Sanitize
-		if('*'==substr($sortBy,0,1) || !isset($fields[$sortBy]))
-			$sortBy=null;
-
 		list($tables,$wheres) = parent::_parseSearchParams($params, $columns, $fields, $sortBy);
 		
 		$select_sql = sprintf("SELECT ".
@@ -231,7 +227,7 @@ class DAO_TwitterAccount extends Cerb_ORMHelper {
 		$where_sql = "".
 			(!empty($wheres) ? sprintf("WHERE %s ",implode(' AND ',$wheres)) : "WHERE 1 ");
 			
-		$sort_sql = (!empty($sortBy)) ? sprintf("ORDER BY %s %s ",$sortBy,($sortAsc || is_null($sortAsc))?"ASC":"DESC") : " ";
+		$sort_sql = self::_buildSortClause($sortBy, $sortAsc, $fields);
 	
 		// Virtuals
 		
@@ -364,13 +360,13 @@ class SearchFields_TwitterAccount implements IDevblocksSearchFields {
 		$translate = DevblocksPlatform::getTranslationService();
 		
 		$columns = array(
-			self::ID => new DevblocksSearchField(self::ID, 'twitter_account', 'id', $translate->_('dao.twitter_account.id'), null),
-			self::TWITTER_ID => new DevblocksSearchField(self::ID, 'twitter_account', 'twitter_id', null),
-			self::SCREEN_NAME => new DevblocksSearchField(self::SCREEN_NAME, 'twitter_account', 'screen_name', $translate->_('dao.twitter_account.screen_name'), Model_CustomField::TYPE_SINGLE_LINE),
-			self::OAUTH_TOKEN => new DevblocksSearchField(self::OAUTH_TOKEN, 'twitter_account', 'oauth_token', null, null),
-			self::OAUTH_TOKEN_SECRET => new DevblocksSearchField(self::OAUTH_TOKEN_SECRET, 'twitter_account', 'oauth_token_secret', null, null),
-			self::LAST_SYNCED_AT => new DevblocksSearchField(self::LAST_SYNCED_AT, 'twitter_account', 'last_synced_at', $translate->_('dao.twitter_account.last_synced_at'), Model_CustomField::TYPE_DATE),
-			self::LAST_SYNCED_MSGID => new DevblocksSearchField(self::LAST_SYNCED_MSGID, 'twitter_account', 'last_synced_msgid', $translate->_('dao.twitter_account.last_synced_msgid'), null),
+			self::ID => new DevblocksSearchField(self::ID, 'twitter_account', 'id', $translate->_('dao.twitter_account.id'), null, true),
+			self::TWITTER_ID => new DevblocksSearchField(self::ID, 'twitter_account', 'twitter_id', null, null, true),
+			self::SCREEN_NAME => new DevblocksSearchField(self::SCREEN_NAME, 'twitter_account', 'screen_name', $translate->_('dao.twitter_account.screen_name'), Model_CustomField::TYPE_SINGLE_LINE, true),
+			self::OAUTH_TOKEN => new DevblocksSearchField(self::OAUTH_TOKEN, 'twitter_account', 'oauth_token', null, null, true),
+			self::OAUTH_TOKEN_SECRET => new DevblocksSearchField(self::OAUTH_TOKEN_SECRET, 'twitter_account', 'oauth_token_secret', null, null, false),
+			self::LAST_SYNCED_AT => new DevblocksSearchField(self::LAST_SYNCED_AT, 'twitter_account', 'last_synced_at', $translate->_('dao.twitter_account.last_synced_at'), Model_CustomField::TYPE_DATE, true),
+			self::LAST_SYNCED_MSGID => new DevblocksSearchField(self::LAST_SYNCED_MSGID, 'twitter_account', 'last_synced_msgid', $translate->_('dao.twitter_account.last_synced_msgid'), null, false),
 		);
 		
 		// Custom fields with fieldsets
@@ -453,6 +449,8 @@ class View_TwitterAccount extends C4_AbstractView implements IAbstractView_Quick
 	}
 
 	function getQuickSearchFields() {
+		$search_fields = SearchFields_TwitterAccount::getFields();
+		
 		$fields = array(
 			'_fulltext' => 
 				array(
@@ -475,6 +473,10 @@ class View_TwitterAccount extends C4_AbstractView implements IAbstractView_Quick
 		
 		$fields = self::_appendFieldsFromQuickSearchContext('cerberusweb.contexts.twitter.account', $fields, null);
 		
+		// Add is_sortable
+		
+		$fields = self::_setSortableQuickSearchFields($fields, $search_fields);
+		
 		// Sort by keys
 		
 		ksort($fields);
@@ -493,9 +495,6 @@ class View_TwitterAccount extends C4_AbstractView implements IAbstractView_Quick
 				// ...
 			}
 		}
-		
-		$this->renderPage = 0;
-		$this->addParams($params, true);
 		
 		return $params;
 	}
