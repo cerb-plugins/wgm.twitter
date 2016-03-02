@@ -45,7 +45,7 @@
 			<tuv xml:lang="en_US"><seg>Twitter User ID</seg></tuv>
 		</tu>
 		<tu tuid='dao.twitter_message.user_name'>
-			<tuv xml:lang="en_US"><seg>User Name</seg></tuv>
+			<tuv xml:lang="en_US"><seg>Username</seg></tuv>
 		</tu>
 		<tu tuid='dao.twitter_message.user_screen_name'>
 			<tuv xml:lang="en_US"><seg>Screen Name</seg></tuv>
