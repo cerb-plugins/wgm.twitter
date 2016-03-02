@@ -35,6 +35,7 @@
 			<td width="99%">
 				<label><input type="radio" name="is_closed" value="1" {if $message->is_closed}checked="checked"{/if}> {'common.yes'|devblocks_translate|lower}</label>
 				<label><input type="radio" name="is_closed" value="0" {if !$message->is_closed}checked="checked"{/if}> {'common.no'|devblocks_translate|lower}</label>
+				<div class="tweet-counter"</div>
 			</td>
 		</tr>
 		<tr>
@@ -45,7 +46,6 @@
 		</tr>
 	</table>
 </fieldset>
-
 
 {if !empty($custom_fields)}
 <fieldset class="peek">
@@ -63,23 +63,35 @@
 </form>
 
 <script type="text/javascript">
-	$popup = genericAjaxPopupFetch('peek');
+$(function() {
+	var $popup = genericAjaxPopupFetch('peek');
+	
 	$popup.one('popup_open', function(event,ui) {
 		{$account = $accounts.{$message->account_id}}
 		$popup.dialog('option','title',"{'wgm.twitter.common.message'|devblocks_translate|capitalize|escape:'javascript' nofilter}{if !empty($account)} @{$account->screen_name|escape:'javascript' nofilter}{/if}");
 		
-		var $txt = $(this).find('textarea:first');
-		$txt.autosize();
+		var $txt = $popup.find('textarea:first').autosize().insertAtCursor('@{$message->user_screen_name|escape:'javascript'} ');;
+		var $counter = $popup.find('div.tweet-counter');
+		
+		$txt.on('keyup', function() {
+			var limit = 140 - $txt.val().length;
+			$counter.text(limit);
+			
+			if(limit < 0) {
+				$counter.css('color','red');
+			} else {
+				$counter.css('color','green');
+			}
+		});
 		
 		$popup.find('input:checkbox[name=do_reply]').click(function(e) {
 			if($(this).is(':checked')) {
 				$txt.show();
 				$txt.focus();
-				$txt.val('');
-				$txt.insertAtCursor('@{$message->user_screen_name|escape:'javascript'} ');
 			} else {
 				$txt.hide().blur();
 			}
 		});
 	});
+});
 </script>
