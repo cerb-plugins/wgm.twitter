@@ -377,8 +377,8 @@ class SearchFields_TwitterMessage implements IDevblocksSearchFields {
 			self::ACCOUNT_ID => new DevblocksSearchField(self::ACCOUNT_ID, 'twitter_message', 'account_id', $translate->_('dao.twitter_message.account_id'), null, true),
 			self::TWITTER_ID => new DevblocksSearchField(self::TWITTER_ID, 'twitter_message', 'twitter_id', $translate->_('dao.twitter_message.twitter_id'), null, true),
 			self::TWITTER_USER_ID => new DevblocksSearchField(self::TWITTER_USER_ID, 'twitter_message', 'twitter_user_id', $translate->_('dao.twitter_message.twitter_user_id'), null, true),
-			self::USER_NAME => new DevblocksSearchField(self::USER_NAME, 'twitter_message', 'user_name', $translate->_('dao.twitter_message.user_name'), Model_CustomField::TYPE_SINGLE_LINE, true),
-			self::USER_SCREEN_NAME => new DevblocksSearchField(self::USER_SCREEN_NAME, 'twitter_message', 'user_screen_name', $translate->_('dao.twitter_message.user_screen_name'), Model_CustomField::TYPE_SINGLE_LINE, true),
+			self::USER_NAME => new DevblocksSearchField(self::USER_NAME, 'twitter_message', 'user_name', $translate->_('common.name'), Model_CustomField::TYPE_SINGLE_LINE, true),
+			self::USER_SCREEN_NAME => new DevblocksSearchField(self::USER_SCREEN_NAME, 'twitter_message', 'user_screen_name', $translate->_('dao.twitter_message.user_name'), Model_CustomField::TYPE_SINGLE_LINE, true),
 			self::USER_FOLLOWERS_COUNT => new DevblocksSearchField(self::USER_FOLLOWERS_COUNT, 'twitter_message', 'user_followers_count', $translate->_('dao.twitter_message.user_followers_count'), Model_CustomField::TYPE_NUMBER, true),
 			self::USER_PROFILE_IMAGE_URL => new DevblocksSearchField(self::USER_PROFILE_IMAGE_URL, 'twitter_message', 'user_profile_image_url', $translate->_('dao.twitter_message.user_profile_image_url'), null, true),
 			self::CREATED_DATE => new DevblocksSearchField(self::CREATED_DATE, 'twitter_message', 'created_date', $translate->_('common.created'), Model_CustomField::TYPE_DATE, true),
@@ -966,9 +966,9 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 			'twitter_id' => $prefix.$translate->_('dao.twitter_message.twitter_id'),
 			'twitter_url' => $prefix.$translate->_('Twitter URL'),
 			'user_followers_count' => $prefix.$translate->_('dao.twitter_message.user_followers_count'),
-			'user_name' => $prefix.$translate->_('dao.twitter_message.user_name'),
+			'user_name' => $prefix.$translate->_('common.name'),
 			'user_profile_image_url' => $prefix.$translate->_('dao.twitter_message.user_profile_image_url'),
-			'user_screen_name' => $prefix.$translate->_('dao.twitter_message.user_screen_name'),
+			'user_screen_name' => $prefix.$translate->_('dao.twitter_message.user_name'),
 			//'record_url' => $prefix.$translate->_('common.url.record'),
 		);
 		
