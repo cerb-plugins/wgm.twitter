@@ -31,17 +31,17 @@
 <fieldset class="peek">
 	<table cellspacing="0" cellpadding="2" border="0" width="98%">
 		<tr>
-			<td width="1%" nowrap="nowrap"><b>{'dao.twitter_message.is_closed'|devblocks_translate|capitalize}:</b></td>
-			<td width="99%">
-				<label><input type="radio" name="is_closed" value="1" {if $message->is_closed}checked="checked"{/if}> {'common.yes'|devblocks_translate|lower}</label>
-				<label><input type="radio" name="is_closed" value="0" {if !$message->is_closed}checked="checked"{/if}> {'common.no'|devblocks_translate|lower}</label>
+			<td width="1%" nowrap="nowrap" valign="top"><label><b>Reply:</b> <input type="checkbox" name="do_reply" value="1" checked="checked"></label></td>
+			<td width="99%" valign="top">
+				<textarea name="reply" rows="5" cols="80" style="width:98%;height:50px;"></textarea>
 				<div class="tweet-counter"</div>
 			</td>
 		</tr>
 		<tr>
-			<td width="1%" nowrap="nowrap" valign="top"><label><b>Reply:</b> <input type="checkbox" name="do_reply" value="1"></label></td>
-			<td width="99%" valign="top">
-				<textarea name="reply" rows="5" cols="80" style="width:98%;height:50px;display:none;" spellcheck="false"></textarea>
+			<td width="1%" nowrap="nowrap"><b>{'status.resolved'|devblocks_translate|capitalize}:</b></td>
+			<td width="99%">
+				<label><input type="radio" name="is_closed" value="1" checked="checked"> {'common.yes'|devblocks_translate|lower}</label>
+				<label><input type="radio" name="is_closed" value="0"> {'common.no'|devblocks_translate|lower}</label>
 			</td>
 		</tr>
 	</table>
