@@ -10,12 +10,20 @@
 <table width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:10px;">
 	<tr>
 		<td width="1%" nowrap="nowrap" valign="top">
-			<img src="{$message->user_profile_image_url}" style="margin-right:5px;" width="48" height="48">
+			<img src="{$message->user_profile_image_url}" style="margin-right:5px;border-radius:5px;" width="48" height="48">
 		</td>
 		<td width="99%" valign="top">
-			<b class="subject" title="{$message->user_name}">{$message->user_screen_name}</b> 
-			{$message->content|devblocks_hyperlinks nofilter}
-			<abbr style="font-size:90%;" title="{$message->created_date|devblocks_date}">{$message->created_date|devblocks_prettytime}</abbr>
+			<div>
+				<b class="subject" title="{$message->user_name}">{$message->user_name}</b>
+				<span style="color:rgb(150,150,150);">
+					@{$message->user_screen_name}
+					 &middot; 
+					<span title="{$message->created_date|devblocks_date}">{$message->created_date|devblocks_date:'d M Y'}</span>
+				</span>
+			</div>
+			<div style="padding:5px;">
+				{$message->content|devblocks_hyperlinks nofilter}
+			</div> 
 		</td>
 	</tr>
 </table>
@@ -58,12 +66,12 @@
 	$popup = genericAjaxPopupFetch('peek');
 	$popup.one('popup_open', function(event,ui) {
 		{$account = $accounts.{$message->account_id}}
-		$(this).dialog('option','title',"{'wgm.twitter.common.message'|devblocks_translate|capitalize|escape:'javascript' nofilter}{if !empty($account)} @{$account->screen_name|escape:'javascript' nofilter}{/if}");
+		$popup.dialog('option','title',"{'wgm.twitter.common.message'|devblocks_translate|capitalize|escape:'javascript' nofilter}{if !empty($account)} @{$account->screen_name|escape:'javascript' nofilter}{/if}");
 		
 		var $txt = $(this).find('textarea:first');
 		$txt.autosize();
 		
-		$(this).find('input:checkbox[name=do_reply]').click(function(e) {
+		$popup.find('input:checkbox[name=do_reply]').click(function(e) {
 			if($(this).is(':checked')) {
 				$txt.show();
 				$txt.focus();

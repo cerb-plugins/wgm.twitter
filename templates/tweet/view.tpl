@@ -67,7 +67,7 @@
 	<tbody style="cursor:pointer;">
 		<tr class="{$tableRowClass}">
 			<td rowspan="2" nowrap="nowrap" align="center" style="padding:5px 0px;">
-				<img src="{$result.t_user_profile_image_url}" style="margin-right:5px;" width="48" height="48">
+				<img src="{$result.t_user_profile_image_url}" style="margin-right:5px;border-radius:5px;" width="48" height="48">
 				<input type="checkbox" name="row_id[]" value="{$result.t_id}" style="display:none;">
 			</td>
 			<td colspan="{$smarty.foreach.headers.total}" style="font-size:100%;padding:5px 0px;">
@@ -76,7 +76,7 @@
 				{$result.t_content|devblocks_hyperlinks nofilter}
 				
 				<a href="{devblocks_url}c=profiles&type=twitter_message&id={$result.t_id}{/devblocks_url}" class="subject">{$result.t_name}</a>
-				<button type="button" class="peek" onclick="genericAjaxPopup('peek','c=profiles&a=handleSectionAction&section=twitter_message&action=showPeekPopup&id={$result.t_id}&view_id={$view->id}',null,false,'500');"><span class="glyphicons glyphicons-new-window-alt"></span></button>
+				<button type="button" class="peek" onclick="genericAjaxPopup('peek','c=profiles&a=handleSectionAction&section=twitter_message&action=showPeekPopup&id={$result.t_id}&view_id={$view->id}',null,false,'50%');"><span class="glyphicons glyphicons-new-window-alt"></span></button>
 			</td>	
 		</tr>
 		
