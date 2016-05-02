@@ -189,7 +189,7 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 	public static function getSearchQueryComponents($columns, $params, $sortBy=null, $sortAsc=null) {
 		$fields = SearchFields_TwitterMessage::getFields();
 		
-		list($tables,$wheres) = parent::_parseSearchParams($params, $columns, $fields, $sortBy);
+		list($tables,$wheres) = parent::_parseSearchParams($params, $columns, $fields, $sortBy, array(), 'twitter_message.id');
 		
 		$select_sql = sprintf("SELECT ".
 			"twitter_message.id as %s, ".

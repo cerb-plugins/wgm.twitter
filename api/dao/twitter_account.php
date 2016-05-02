@@ -200,7 +200,7 @@ class DAO_TwitterAccount extends Cerb_ORMHelper {
 	public static function getSearchQueryComponents($columns, $params, $sortBy=null, $sortAsc=null) {
 		$fields = SearchFields_TwitterAccount::getFields();
 		
-		list($tables,$wheres) = parent::_parseSearchParams($params, $columns, $fields, $sortBy);
+		list($tables,$wheres) = parent::_parseSearchParams($params, $columns, $fields, $sortBy, array(), 'twitter_account.id');
 		
 		$select_sql = sprintf("SELECT ".
 			"twitter_account.id as %s, ".
