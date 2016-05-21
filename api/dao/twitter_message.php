@@ -189,7 +189,7 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 	public static function getSearchQueryComponents($columns, $params, $sortBy=null, $sortAsc=null) {
 		$fields = SearchFields_TwitterMessage::getFields();
 		
-		list($tables,$wheres) = parent::_parseSearchParams($params, $columns, $fields, $sortBy, array(), 'twitter_message.id');
+		list($tables,$wheres) = parent::_parseSearchParams($params, $columns, 'SearchFields_TwitterMessage', $sortBy);
 		
 		$select_sql = sprintf("SELECT ".
 			"twitter_message.id as %s, ".
@@ -218,19 +218,10 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 			
 		$join_sql = "FROM twitter_message ";
 		
-		// Custom field joins
-		list($select_sql, $join_sql, $has_multiple_values) = self::_appendSelectJoinSqlForCustomFieldTables(
-			$tables,
-			$params,
-			'twitter_message.id',
-			$select_sql,
-			$join_sql
-		);
-				
 		$where_sql = "".
 			(!empty($wheres) ? sprintf("WHERE %s ",implode(' AND ',$wheres)) : "WHERE 1 ");
 			
-		$sort_sql = self::_buildSortClause($sortBy, $sortAsc, $fields);
+		$sort_sql = self::_buildSortClause($sortBy, $sortAsc, $fields, $select_sql, 'SearchFields_TwitterMessage');
 	
 		// Virtuals
 		
@@ -271,13 +262,6 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 			case SearchFields_TwitterMessage::VIRTUAL_HAS_FIELDSET:
 				self::_searchComponentsVirtualHasFieldset($param, $from_context, $from_index, $args['join_sql'], $args['where_sql']);
 				break;
-			
-			/*
-			case SearchFields_EXAMPLE::VIRTUAL_WATCHERS:
-				$args['has_multiple_values'] = true;
-				self::_searchComponentsVirtualWatchers($param, $from_context, $from_index, $args['join_sql'], $args['where_sql'], $args['tables']);
-				break;
-			*/
 		}
 	}
 	
@@ -351,7 +335,7 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 
 };
 
-class SearchFields_TwitterMessage implements IDevblocksSearchFields {
+class SearchFields_TwitterMessage extends DevblocksSearchFields {
 	const ID = 't_id';
 	const ACCOUNT_ID = 't_account_id';
 	const TWITTER_ID = 't_twitter_id';
@@ -366,10 +350,41 @@ class SearchFields_TwitterMessage implements IDevblocksSearchFields {
 	
 	const VIRTUAL_HAS_FIELDSET = '*_has_fieldset';
 	
+	static private $_fields = null;
+	
+	static function getPrimaryKey() {
+		return 'twitter_message.id';
+	}
+	
+	static function getCustomFieldContextKeys() {
+		return array(
+			'cerberusweb.contexts.twitter.message' => new DevblocksSearchFieldContextKeys('twitter_message.id', self::ID),
+			'cerberusweb.contexts.twitter.account' => new DevblocksSearchFieldContextKeys('twitter_message.account_id', self::ACCOUNT_ID),
+		);
+	}
+	
+	static function getWhereSQL(DevblocksSearchCriteria $param) {
+		if('cf_' == substr($param->field, 0, 3)) {
+			return self::_getWhereSQLFromCustomFields($param);
+		} else {
+			return $param->getWhereSQL(self::getFields(), self::getPrimaryKey());
+		}
+	}
+	
 	/**
 	 * @return DevblocksSearchField[]
 	 */
 	static function getFields() {
+		if(is_null(self::$_fields))
+			self::$_fields = self::_getFields();
+		
+		return self::$_fields;
+	}
+	
+	/**
+	 * @return DevblocksSearchField[]
+	 */
+	static function _getFields() {
 		$translate = DevblocksPlatform::getTranslationService();
 		
 		$columns = array(
@@ -390,9 +405,7 @@ class SearchFields_TwitterMessage implements IDevblocksSearchFields {
 		
 		// Custom fields with fieldsets
 		
-		$custom_columns = DevblocksSearchField::getCustomSearchFieldsByContexts(array(
-			'cerberusweb.contexts.twitter.message',
-		));
+		$custom_columns = DevblocksSearchField::getCustomSearchFieldsByContexts(array_keys(self::getCustomFieldContextKeys()));
 		
 		if(is_array($custom_columns))
 			$columns = array_merge($columns, $custom_columns);
@@ -463,6 +476,9 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 			$this->renderSortAsc,
 			$this->renderTotal
 		);
+		
+		$this->_lazyLoadCustomFieldsIntoObjects($objects, 'SearchFields_TwitterMessage');
+		
 		return $objects;
 	}
 	
@@ -547,7 +563,7 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 		$search_fields = SearchFields_TwitterMessage::getFields();
 		
 		$fields = array(
-			'_fulltext' => 
+			'text' => 
 				array(
 					'type' => DevblocksSearchCriteria::TYPE_TEXT,
 					'options' => array('param_key' => SearchFields_TwitterMessage::CONTENT, 'match' => DevblocksSearchCriteria::OPTION_TEXT_PARTIAL),
@@ -605,50 +621,44 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 		ksort($fields);
 		
 		return $fields;
-	}	
+	}
 	
-	function getParamsFromQuickSearchFields($fields) {
-		$search_fields = $this->getQuickSearchFields();
-		$params = DevblocksSearchCriteria::getParamsFromQueryFields($fields, $search_fields);
-
-		// Handle virtual fields and overrides
-		if(is_array($fields))
-		foreach($fields as $k => $v) {
-			switch($k) {
-				case 'account':
-					$field_keys = array(
-						'account' => SearchFields_TwitterMessage::ACCOUNT_ID,
-					);
-					
-					@$field_key = $field_keys[$k];
-					
-					$oper = DevblocksSearchCriteria::OPER_IN;
-					
-					$patterns = DevblocksPlatform::parseCsvString($v);
-					$accounts = DAO_TwitterAccount::getAll();
-					$values = array();
-					
-					if(is_array($patterns))
-					foreach($patterns as $pattern) {
-						foreach($accounts as $account_id => $account) {
-							if(false !== stripos($account->screen_name, $pattern))
-								$values[$account_id] = true;
-						}
+	function getParamFromQuickSearchFieldTokens($field, $tokens) {
+		switch($field) {
+			case 'account':
+				$field_key = SearchFields_TwitterMessage::ACCOUNT_ID;
+				$oper = null;
+				$patterns = array();
+				
+				CerbQuickSearchLexer::getOperArrayFromTokens($tokens, $oper, $patterns);
+				
+				$accounts = DAO_TwitterAccount::getAll();
+				$values = array();
+				
+				if(is_array($patterns))
+				foreach($patterns as $pattern) {
+					foreach($accounts as $account_id => $account) {
+						if(false !== stripos($account->screen_name, $pattern))
+							$values[$account_id] = true;
 					}
-					
-					$param = new DevblocksSearchCriteria(
-						$field_key,
-						$oper,
-						array_keys($values)
-					);
-					$params[$field_key] = $param;
-					break;
-			}
+				}
+				
+				return new DevblocksSearchCriteria(
+					$field_key,
+					$oper,
+					array_keys($values)
+				);
+				break;
+		
+			default:
+				$search_fields = $this->getQuickSearchFields();
+				return DevblocksSearchCriteria::getParamFromQueryFieldTokens($field, $tokens, $search_fields);
+				break;
 		}
 		
-		return $params;
+		return false;
 	}
-
+	
 	function render() {
 		$this->_sanitize();
 		

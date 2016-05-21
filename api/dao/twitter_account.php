@@ -200,7 +200,7 @@ class DAO_TwitterAccount extends Cerb_ORMHelper {
 	public static function getSearchQueryComponents($columns, $params, $sortBy=null, $sortAsc=null) {
 		$fields = SearchFields_TwitterAccount::getFields();
 		
-		list($tables,$wheres) = parent::_parseSearchParams($params, $columns, $fields, $sortBy, array(), 'twitter_account.id');
+		list($tables,$wheres) = parent::_parseSearchParams($params, $columns, 'SearchFields_TwitterAccount', $sortBy);
 		
 		$select_sql = sprintf("SELECT ".
 			"twitter_account.id as %s, ".
@@ -221,36 +221,13 @@ class DAO_TwitterAccount extends Cerb_ORMHelper {
 			
 		$join_sql = "FROM twitter_account ";
 		
-		// Custom field joins
-		//list($select_sql, $join_sql, $has_multiple_values) = self::_appendSelectJoinSqlForCustomFieldTables(
-		//	$tables,
-		//	$params,
-		//	'twitter_account.id',
-		//	$select_sql,
-		//	$join_sql
-		//);
 		$has_multiple_values = false; // [TODO] Temporary when custom fields disabled
 				
 		$where_sql = "".
 			(!empty($wheres) ? sprintf("WHERE %s ",implode(' AND ',$wheres)) : "WHERE 1 ");
 			
-		$sort_sql = self::_buildSortClause($sortBy, $sortAsc, $fields);
+		$sort_sql = self::_buildSortClause($sortBy, $sortAsc, $fields, $select_sql, 'SearchFields_TwitterAccount');
 	
-		// Virtuals
-		
-		$args = array(
-			'join_sql' => &$join_sql,
-			'where_sql' => &$where_sql,
-			'tables' => &$tables,
-			'has_multiple_values' => &$has_multiple_values
-		);
-		
-		array_walk_recursive(
-			$params,
-			array('DAO_TwitterAccount', '_translateVirtualParameters'),
-			$args
-		);
-		
 		return array(
 			'primary_table' => 'twitter_account',
 			'select' => $select_sql,
@@ -259,26 +236,6 @@ class DAO_TwitterAccount extends Cerb_ORMHelper {
 			'has_multiple_values' => $has_multiple_values,
 			'sort' => $sort_sql,
 		);
-	}
-	
-	private static function _translateVirtualParameters($param, $key, &$args) {
-		if(!is_a($param, 'DevblocksSearchCriteria'))
-			return;
-			
-		//$from_context = CerberusContexts::CONTEXT_EXAMPLE;
-		//$from_index = 'example.id';
-		
-		$param_key = $param->field;
-		settype($param_key, 'string');
-		
-		switch($param_key) {
-			/*
-			case SearchFields_EXAMPLE::VIRTUAL_WATCHERS:
-				$args['has_multiple_values'] = true;
-				self::_searchComponentsVirtualWatchers($param, $from_context, $from_index, $args['join_sql'], $args['where_sql'], $args['tables']);
-				break;
-			*/
-		}
 	}
 	
 	/**
@@ -356,7 +313,7 @@ class DAO_TwitterAccount extends Cerb_ORMHelper {
 
 };
 
-class SearchFields_TwitterAccount implements IDevblocksSearchFields {
+class SearchFields_TwitterAccount extends DevblocksSearchFields {
 	const ID = 't_id';
 	const TWITTER_ID = 't_twitter_id';
 	const SCREEN_NAME = 't_screen_name';
@@ -365,10 +322,40 @@ class SearchFields_TwitterAccount implements IDevblocksSearchFields {
 	const LAST_SYNCED_AT = 't_last_synced_at';
 	const LAST_SYNCED_MSGID = 't_last_synced_msgid';
 	
+	static private $_fields = null;
+	
+	static function getPrimaryKey() {
+		return 'twitter_account.id';
+	}
+	
+	static function getCustomFieldContextKeys() {
+		return array(
+			'cerberusweb.contexts.twitter.account' => new DevblocksSearchFieldContextKeys('twitter_account.id', self::ID),
+		);
+	}
+	
+	static function getWhereSQL(DevblocksSearchCriteria $param) {
+		if('cf_' == substr($param->field, 0, 3)) {
+			return self::_getWhereSQLFromCustomFields($param);
+		} else {
+			return $param->getWhereSQL(self::getFields(), self::getPrimaryKey());
+		}
+	}
+	
 	/**
 	 * @return DevblocksSearchField[]
 	 */
 	static function getFields() {
+		if(is_null(self::$_fields))
+			self::$_fields = self::_getFields();
+		
+		return self::$_fields;
+	}
+	
+	/**
+	 * @return DevblocksSearchField[]
+	 */
+	static function _getFields() {
 		$translate = DevblocksPlatform::getTranslationService();
 		
 		$columns = array(
@@ -383,9 +370,7 @@ class SearchFields_TwitterAccount implements IDevblocksSearchFields {
 		
 		// Custom fields with fieldsets
 		
-		$custom_columns = DevblocksSearchField::getCustomSearchFieldsByContexts(array(
-			'cerberusweb.contexts.twitter.account',
-		));
+		$custom_columns = DevblocksSearchField::getCustomSearchFieldsByContexts(array_keys(self::getCustomFieldContextKeys()));
 		
 		if(is_array($custom_columns))
 			$columns = array_merge($columns, $custom_columns);
@@ -453,6 +438,9 @@ class View_TwitterAccount extends C4_AbstractView implements IAbstractView_Quick
 			$this->renderSortAsc,
 			$this->renderTotal
 		);
+		
+		$this->_lazyLoadCustomFieldsIntoObjects($objects, 'SearchFields_TwitterAccount');
+		
 		return $objects;
 	}
 	
@@ -464,7 +452,7 @@ class View_TwitterAccount extends C4_AbstractView implements IAbstractView_Quick
 		$search_fields = SearchFields_TwitterAccount::getFields();
 		
 		$fields = array(
-			'_fulltext' => 
+			'text' => 
 				array(
 					'type' => DevblocksSearchCriteria::TYPE_TEXT,
 					'options' => array('param_key' => SearchFields_TwitterAccount::SCREEN_NAME, 'match' => DevblocksSearchCriteria::OPTION_TEXT_PARTIAL),
@@ -494,21 +482,17 @@ class View_TwitterAccount extends C4_AbstractView implements IAbstractView_Quick
 		ksort($fields);
 		
 		return $fields;
-	}	
+	}
 	
-	function getParamsFromQuickSearchFields($fields) {
-		$search_fields = $this->getQuickSearchFields();
-		$params = DevblocksSearchCriteria::getParamsFromQueryFields($fields, $search_fields);
-
-		// Handle virtual fields and overrides
-		if(is_array($fields))
-		foreach($fields as $k => $v) {
-			switch($k) {
-				// ...
-			}
+	function getParamFromQuickSearchFieldTokens($field, $tokens) {
+		switch($field) {
+			default:
+				$search_fields = $this->getQuickSearchFields();
+				return DevblocksSearchCriteria::getParamFromQueryFieldTokens($field, $tokens, $search_fields);
+				break;
 		}
 		
-		return $params;
+		return false;
 	}
 	
 	function render() {
