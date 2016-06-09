@@ -529,28 +529,29 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 	function getSubtotalCounts($column) {
 		$counts = array();
 		$fields = $this->getFields();
+		$context = Context_TwitterMessage::ID;
 
 		if(!isset($fields[$column]))
 			return array();
 		
 		switch($column) {
 			case SearchFields_TwitterMessage::IS_CLOSED:
-				$counts = $this->_getSubtotalCountForBooleanColumn('DAO_TwitterMessage', $column);
+				$counts = $this->_getSubtotalCountForBooleanColumn($context, $column);
 				break;
 				
 			case SearchFields_TwitterMessage::USER_NAME:
 			case SearchFields_TwitterMessage::USER_SCREEN_NAME:
-				$counts = $this->_getSubtotalCountForStringColumn('DAO_TwitterMessage', $column);
+				$counts = $this->_getSubtotalCountForStringColumn($context, $column);
 				break;
 				
 			case SearchFields_TwitterMessage::VIRTUAL_HAS_FIELDSET:
-				$counts = $this->_getSubtotalCountForHasFieldsetColumn('DAO_TwitterMessage', 'cerberusweb.contexts.twitter.message', $column);
+				$counts = $this->_getSubtotalCountForHasFieldsetColumn($context, $column);
 				break;
 				
 			default:
 				// Custom fields
 				if('cf_' == substr($column,0,3)) {
-					$counts = $this->_getSubtotalCountForCustomColumn('DAO_TwitterMessage', $column, 'twitter_message.id');
+					$counts = $this->_getSubtotalCountForCustomColumn($context, $column);
 				}
 				
 				break;
