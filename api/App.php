@@ -348,6 +348,7 @@ class WgmTwitter_API {
 		$consumer_key = DevblocksPlatform::getPluginSetting('wgm.twitter','consumer_key','');
 		$consumer_secret = DevblocksPlatform::getPluginSetting('wgm.twitter','consumer_secret','');
 		$this->_oauth = new OAuth($consumer_key, $consumer_secret);
+		$this->_oauth->setRequestEngine(OAUTH_REQENGINE_CURL);
 	}
 	
 	/**
