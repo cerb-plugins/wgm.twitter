@@ -54,7 +54,7 @@
 </fieldset>
 {/if}
 
-{include file="devblocks:cerberusweb.core::internal/custom_fieldsets/peek_custom_fieldsets.tpl" context='cerberusweb.contexts.twitter.message' context_id=$message->id}
+{include file="devblocks:cerberusweb.core::internal/custom_fieldsets/peek_custom_fieldsets.tpl" context=Context_TwitterMessage::ID context_id=$message->id}
 
 <div class="toolbar">
 	<button type="button" class="submit" onclick="genericAjaxPopupPostCloseReloadView(null,'frmTwitterMessage','{$view_id}',false,'twitter_message_save');"><span class="glyphicons glyphicons-circle-ok" style="color:rgb(0,180,0);"></span> {'common.save_changes'|devblocks_translate|capitalize}</button>

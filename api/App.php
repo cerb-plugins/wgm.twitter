@@ -39,10 +39,10 @@ class WgmTwitter_MessageProfileSection extends Extension_PageSection {
 		}
 		
 		// Custom Fields
-		$custom_fields = DAO_CustomField::getByContext('cerberusweb.contexts.twitter.message', false);
+		$custom_fields = DAO_CustomField::getByContext(Context_TwitterMessage::ID, false);
 		$tpl->assign('custom_fields', $custom_fields);
 
-		$custom_field_values = DAO_CustomFieldValue::getValuesByContextIds('cerberusweb.contexts.twitter.message', $message->id);
+		$custom_field_values = DAO_CustomFieldValue::getValuesByContextIds(Context_TwitterMessage::ID, $message->id);
 		if(isset($custom_field_values[$message->id]))
 			$tpl->assign('custom_field_values', $custom_field_values[$message->id]);
 		
@@ -72,7 +72,7 @@ class WgmTwitter_MessageProfileSection extends Extension_PageSection {
 		
 		// Custom field saves
 		@$field_ids = DevblocksPlatform::importGPC($_POST['field_ids'], 'array', array());
-		DAO_CustomFieldValue::handleFormPost('cerberusweb.contexts.twitter.message', $message->id, $field_ids);
+		DAO_CustomFieldValue::handleFormPost(Context_TwitterMessage::ID, $message->id, $field_ids);
 		
 		// Replies
 		if(!empty($do_reply) && !empty($reply)) {
@@ -133,13 +133,13 @@ class WgmTwitter_MessageProfileSection extends Extension_PageSection {
 		$tpl->assign('workers', $workers);
 		
 		// Custom Fields
-		$custom_fields = DAO_CustomField::getByContext('cerberusweb.contexts.twitter.message', false);
+		$custom_fields = DAO_CustomField::getByContext(Context_TwitterMessage::ID, false);
 		$tpl->assign('custom_fields', $custom_fields);
 		
 		$tpl->display('devblocks:wgm.twitter::tweet/bulk.tpl');
 	}
 	
-	function saveBulkUpdatePopupAction() {
+	function startBulkUpdateJsonAction() {
 		// Filter: whole list or check
 		@$filter = DevblocksPlatform::importGPC($_REQUEST['filter'],'string','');
 		$ids = array();
@@ -183,9 +183,21 @@ class WgmTwitter_MessageProfileSection extends Extension_PageSection {
 			default:
 				break;
 		}
+
+		// If we have specific IDs, add a filter for those too
+		if(!empty($ids)) {
+			$view->addParam(new DevblocksSearchCriteria(Context_TwitterMessage::ID, 'in', $ids));
+		}
 		
-		$view->doBulkUpdate($filter, $do, $ids);
-		$view->render();
+		// Create batches
+		$batch_key = DAO_ContextBulkUpdate::createFromView($view, $do);
+		
+		header('Content-Type: application/json; charset=utf-8');
+		
+		echo json_encode(array(
+			'cursor' => $batch_key,
+		));
+		
 		return;
 	}
 }

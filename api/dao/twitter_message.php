@@ -37,7 +37,7 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 			
 			// Send events
 			if($check_deltas) {
-				CerberusContexts::checkpointChanges('cerberusweb.contexts.twitter.message', $batch_ids);
+				CerberusContexts::checkpointChanges(Context_TwitterMessage::ID, $batch_ids);
 			}
 			
 			// Make changes
@@ -58,7 +58,7 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 				);
 				
 				// Log the context update
-				DevblocksPlatform::markContextChanged('cerberusweb.contexts.twitter.message', $batch_ids);
+				DevblocksPlatform::markContextChanged(Context_TwitterMessage::ID, $batch_ids);
 			}
 		}
 	}
@@ -67,6 +67,50 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 		parent::_updateWhere('twitter_message', $fields, $where);
 	}
 
+	/**
+	 * @param Model_ContextBulkUpdate $update
+	 * @return boolean
+	 */
+	static function bulkUpdate(Model_ContextBulkUpdate $update) {
+		$do = $update->actions;
+		$ids = $update->context_ids;
+
+		// Make sure we have actions
+		if(empty($ids) || empty($do))
+			return false;
+		
+		$update->markInProgress();
+		
+		$change_fields = array();
+		$custom_fields = array();
+
+		if(is_array($do))
+		foreach($do as $k => $v) {
+			switch($k) {
+				case 'status':
+					$change_fields[DAO_TwitterMessage::IS_CLOSED] = !empty($v) ? 1 : 0;
+					break;
+					
+				default:
+					// Custom fields
+					if(substr($k,0,3)=="cf_") {
+						$custom_fields[substr($k,3)] = $v;
+					}
+					break;
+			}
+		}
+
+		if(!empty($change_fields))
+			DAO_TwitterMessage::update($ids, $change_fields);
+
+		// Custom Fields
+		if(!empty($custom_fields))
+			C4_AbstractView::_doBulkSetCustomFields(Context_TwitterMessage::ID, $custom_fields, $ids);
+		
+		$update->markCompleted();
+		return true;
+	}
+	
 	/**
 	 * @param string $where
 	 * @param mixed $sortBy
@@ -252,7 +296,7 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 		if(!is_a($param, 'DevblocksSearchCriteria'))
 			return;
 			
-		$from_context = 'cerberusweb.contexts.twitter.message';
+		$from_context = Context_TwitterMessage::ID;
 		$from_index = 'twitter_message.id';
 		
 		$param_key = $param->field;
@@ -358,7 +402,7 @@ class SearchFields_TwitterMessage extends DevblocksSearchFields {
 	
 	static function getCustomFieldContextKeys() {
 		return array(
-			'cerberusweb.contexts.twitter.message' => new DevblocksSearchFieldContextKeys('twitter_message.id', self::ID),
+			Context_TwitterMessage::ID => new DevblocksSearchFieldContextKeys('twitter_message.id', self::ID),
 			'cerberusweb.contexts.twitter.account' => new DevblocksSearchFieldContextKeys('twitter_message.account_id', self::ACCOUNT_ID),
 		);
 	}
@@ -611,7 +655,7 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 		
 		// Add searchable custom fields
 		
-		$fields = self::_appendFieldsFromQuickSearchContext('cerberusweb.contexts.twitter.message', $fields, null);
+		$fields = self::_appendFieldsFromQuickSearchContext(Context_TwitterMessage::ID, $fields, null);
 		
 		// Add is_sortable
 		
@@ -668,7 +712,7 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 		$tpl->assign('view', $this);
 
 		// Custom fields
-		$custom_fields = DAO_CustomField::getByContext('cerberusweb.contexts.twitter.message');
+		$custom_fields = DAO_CustomField::getByContext(Context_TwitterMessage::ID);
 		$tpl->assign('custom_fields', $custom_fields);
 
 		// Accounts
@@ -720,7 +764,7 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 				break;
 				
 			case SearchFields_TwitterMessage::VIRTUAL_HAS_FIELDSET:
-				$this->_renderCriteriaHasFieldset($tpl, 'cerberusweb.contexts.twitter.message');
+				$this->_renderCriteriaHasFieldset($tpl, Context_TwitterMessage::ID);
 				break;
 				
 			default:
@@ -828,70 +872,6 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 			$this->addParam($criteria, $field);
 			$this->renderPage = 0;
 		}
-	}
-		
-	function doBulkUpdate($filter, $do, $ids=array()) {
-		@set_time_limit(600); // 10m
-	
-		$change_fields = array();
-		$custom_fields = array();
-
-		// Make sure we have actions
-		if(empty($do))
-			return;
-
-		// Make sure we have checked items if we want a checked list
-		if(0 == strcasecmp($filter,"checks") && empty($ids))
-			return;
-			
-		if(is_array($do))
-		foreach($do as $k => $v) {
-			switch($k) {
-				case 'status':
-					$change_fields[DAO_TwitterMessage::IS_CLOSED] = !empty($v) ? 1 : 0;
-					break;
-					
-				default:
-					// Custom fields
-					if(substr($k,0,3)=="cf_") {
-						$custom_fields[substr($k,3)] = $v;
-					}
-					break;
-			}
-		}
-
-		$pg = 0;
-
-		if(empty($ids))
-		do {
-			list($objects,$null) = DAO_TwitterMessage::search(
-				array(),
-				$this->getParams(),
-				100,
-				$pg++,
-				SearchFields_TwitterMessage::ID,
-				true,
-				false
-			);
-			$ids = array_merge($ids, array_keys($objects));
-			 
-		} while(!empty($objects));
-
-		$batch_total = count($ids);
-		for($x=0;$x<=$batch_total;$x+=100) {
-			$batch_ids = array_slice($ids,$x,100);
-			
-			if(!empty($change_fields)) {
-				DAO_TwitterMessage::update($batch_ids, $change_fields);
-			}
-
-			// Custom Fields
-			self::_doBulkSetCustomFields('cerberusweb.contexts.twitter.message', $custom_fields, $batch_ids);
-			
-			unset($batch_ids);
-		}
-
-		unset($ids);
 	}
 };
 

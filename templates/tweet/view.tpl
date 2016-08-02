@@ -27,7 +27,6 @@
 <input type="hidden" name="a" value="handleSectionAction">
 <input type="hidden" name="section" value="twitter_message">
 <input type="hidden" name="action" value="viewMarkClosed">
-<input type="hidden" name="explore_from" value="0">
 <input type="hidden" name="_csrf_token" value="{$session.csrf_token}">
 
 <table cellpadding="1" cellspacing="0" border="0" width="100%" class="worklistBody">
@@ -136,10 +135,7 @@
 	
 	{if $total}
 	<div style="float:left;" id="{$view->id}_actions">
-		{*
-		<button type="button" class="action-always-show action-explore" onclick="this.form.explore_from.value=$(this).closest('form').find('tbody input:checkbox:checked:first').val();this.form.a.value='viewExplore';this.form.submit();"><span class="glyphicons glyphicons-play-button"></span> {'common.explore'|devblocks_translate|lower}</button>
-		*}
-		{if 1||$active_worker->hasPriv('example.actions.update_all')}<button type="button" class="action-always-show action-bulkupdate" onclick="genericAjaxPopup('peek','c=profiles&a=handleSectionAction&section=twitter_message&action=showBulkUpdatePopup&view_id={$view->id}&ids=' + Devblocks.getFormEnabledCheckboxValues('viewForm{$view->id}','row_id[]'),null,false,'500');"><span class="glyphicons glyphicons-folder-closed"></span> {'common.bulk_update'|devblocks_translate|lower}</button>{/if}
+		{if 1||$active_worker->hasPriv('example.actions.update_all')}<button type="button" class="action-always-show action-bulkupdate" onclick="genericAjaxPopup('peek','c=profiles&a=handleSectionAction&section=twitter_message&action=showBulkUpdatePopup&view_id={$view->id}&ids=' + Devblocks.getFormEnabledCheckboxValues('viewForm{$view->id}','row_id[]'),null,false,'50%');"><span class="glyphicons glyphicons-folder-closed"></span> {'common.bulk_update'|devblocks_translate|lower}</button>{/if}
 		<button type="button" class="action-close" onclick="$frm=$(this).closest('form');$frm.find('input:hidden[name=action]').val('viewMarkClosed');genericAjaxPost($frm,'view{$view->id}',null);"><span class="glyphicons glyphicons-circle-ok" style="color:rgb(0,180,0);"></span> {'common.close'|devblocks_translate|lower}</button>
 	</div>
 	{/if}
@@ -152,57 +148,45 @@
 {include file="devblocks:cerberusweb.core::internal/views/view_common_jquery_ui.tpl"}
 
 <script type="text/javascript">
-$frm = $('#viewForm{$view->id}');
-
-{if $pref_keyboard_shortcuts}
-$frm.bind('keyboard_shortcut',function(event) {
-	//console.log("{$view->id} received " + (indirect ? 'indirect' : 'direct') + " keyboard event for: " + event.keypress_event.which);
+$(function() {
+	var $frm = $('#viewForm{$view->id}');
 	
-	$view_actions = $('#{$view->id}_actions');
+	{if $pref_keyboard_shortcuts}
+	$frm.bind('keyboard_shortcut',function(event) {
+		var $view_actions = $('#{$view->id}_actions');
+		var hotkey_activated = true;
 	
-	hotkey_activated = true;
-
-	switch(event.keypress_event.which) {
-		case 98: // (b) bulk update
-			$btn = $view_actions.find('button.action-bulkupdate');
-		
-			if(event.indirect) {
-				$btn.select().focus();
-				
-			} else {
-				$btn.click();
-			}
-			break;
+		switch(event.keypress_event.which) {
+			case 98: // (b) bulk update
+				var $btn = $view_actions.find('button.action-bulkupdate');
 			
-		case 99: // (c) close
-			$btn = $view_actions.find('button.action-close');
-		
-			if(event.indirect) {
-				$btn.select().focus();
+				if(event.indirect) {
+					$btn.select().focus();
+					
+				} else {
+					$btn.click();
+				}
+				break;
 				
-			} else {
-				$btn.click();
-			}
-			break;
-		
-		case 101: // (e) explore
-			$btn = $view_actions.find('button.action-explore');
-		
-			if(event.indirect) {
-				$btn.select().focus();
-				
-			} else {
-				$btn.click();
-			}
-			break;
+			case 99: // (c) close
+				var $btn = $view_actions.find('button.action-close');
 			
-		default:
-			hotkey_activated = false;
-			break;
-	}
-
-	if(hotkey_activated)
-		event.preventDefault();
+				if(event.indirect) {
+					$btn.select().focus();
+					
+				} else {
+					$btn.click();
+				}
+				break;
+			
+			default:
+				hotkey_activated = false;
+				break;
+		}
+	
+		if(hotkey_activated)
+			event.preventDefault();
+	});
+	{/if}
 });
-{/if}
 </script>
