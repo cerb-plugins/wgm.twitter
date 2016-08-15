@@ -186,7 +186,7 @@ class WgmTwitter_MessageProfileSection extends Extension_PageSection {
 
 		// If we have specific IDs, add a filter for those too
 		if(!empty($ids)) {
-			$view->addParam(new DevblocksSearchCriteria(Context_TwitterMessage::ID, 'in', $ids));
+			$view->addParam(new DevblocksSearchCriteria(SearchFields_TwitterMessage::ID, 'in', $ids));
 		}
 		
 		// Create batches
