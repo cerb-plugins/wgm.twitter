@@ -8,10 +8,6 @@
 
 <br clear="all">
 
-{if !$extensions.oauth}
-<b>The oauth extension is not installed.</b>
-{else}
-
 {* [TODO] Move this to an 'add' popup on the worklist *}
 <fieldset>
 	<legend>Twitter Application</legend>
@@ -63,19 +59,20 @@
 {include file="devblocks:cerberusweb.core::internal/views/search_and_view.tpl" view=$view}
 
 <script type="text/javascript">
-$('#frmSetupTwitter BUTTON.submit')
-	.click(function(e) {
-		genericAjaxPost('frmSetupTwitter','',null,function(json) {
-			$o = $.parseJSON(json);
-			if(false == $o || false == $o.status) {
-				Devblocks.showError('#frmSetupTwitter div.status',$o.error);
-				$('#frmAuthTwitter').fadeOut();
-			} else {
-				Devblocks.showSuccess('#frmSetupTwitter div.status',$o.message);
-				$('#frmAuthTwitter').fadeIn();
-			}
-		});
-	})
-;
+$(function() {
+	$('#frmSetupTwitter BUTTON.submit')
+		.click(function(e) {
+			genericAjaxPost('frmSetupTwitter','',null,function(json) {
+				$o = $.parseJSON(json);
+				if(false == $o || false == $o.status) {
+					Devblocks.showError('#frmSetupTwitter div.status',$o.error);
+					$('#frmAuthTwitter').fadeOut();
+				} else {
+					Devblocks.showSuccess('#frmSetupTwitter div.status',$o.message);
+					$('#frmAuthTwitter').fadeIn();
+				}
+			});
+		})
+	;
+});
 </script>
-{/if}

@@ -208,10 +208,6 @@ class WgmTwitter_SetupSection extends Extension_PageSection {
 	const ID = 'wgmtwitter.setup.twitter';
 	
 	function render() {
-		// check whether extensions are loaded or not
-		$extensions = array(
-			'oauth' => extension_loaded('oauth')
-		);
 		$tpl = DevblocksPlatform::getTemplateService();
 
 		$visit = CerberusApplication::getVisit();
@@ -222,7 +218,6 @@ class WgmTwitter_SetupSection extends Extension_PageSection {
 			'consumer_secret' => DevblocksPlatform::getPluginSetting('wgm.twitter','consumer_secret',''),
 		);
 		$tpl->assign('params', $params);
-		$tpl->assign('extensions', $extensions);
 		
 		// Worklist
 
@@ -272,8 +267,10 @@ class WgmTwitter_SetupSection extends Extension_PageSection {
 		
 		if($callback) {
 			if(!$denied) {
+				@$verifier = DevblocksPlatform::importGPC($_REQUEST['oauth_verifier'], 'string', '');
+
 				$twitter->setCredentials($_SESSION['oauth_token'], $_SESSION['oauth_token_secret']);
-				$user = $twitter->getAccessToken();
+				$user = $twitter->getAccessToken($verifier);
 				
 				$result = DAO_TwitterAccount::getByTwitterId($user['user_id']);
 				
@@ -304,7 +301,7 @@ class WgmTwitter_SetupSection extends Extension_PageSection {
 				$_SESSION['oauth_token'] = $request_token['oauth_token'];
 				$_SESSION['oauth_token_secret'] = $request_token['oauth_token_secret'];
 				
-				header('Location: ' . WgmTwitter_API::TWITTER_AUTHENTICATE_URL . '?oauth_token=' . $request_token['oauth_token']);
+				header('Location: ' . $twitter->getAuthenticationUrl($request_token['oauth_token']));
 				exit;
 				
 			} catch(OAuthException $e) {
@@ -349,6 +346,7 @@ class WgmTwitter_API {
 	const TWITTER_REQUEST_TOKEN_URL = "https://api.twitter.com/oauth/request_token";
 	const TWITTER_AUTHENTICATE_URL = "https://api.twitter.com/oauth/authenticate";
 	const TWITTER_ACCESS_TOKEN_URL = "https://api.twitter.com/oauth/access_token";
+	
 	const TWITTER_PUBLIC_TIMELINE_API = "https://api.twitter.com/1.1/statuses/home_timeline.json";
 	const TWITTER_UPDATE_STATUS_API = "https://api.twitter.com/1.1/statuses/update.json";
 	const TWITTER_STATUSES_MENTIONS_API = "https://api.twitter.com/1.1/statuses/mentions_timeline.json";
@@ -359,10 +357,8 @@ class WgmTwitter_API {
 	private function __construct() {
 		$consumer_key = DevblocksPlatform::getPluginSetting('wgm.twitter','consumer_key','');
 		$consumer_secret = DevblocksPlatform::getPluginSetting('wgm.twitter','consumer_secret','');
-		$this->_oauth = new OAuth($consumer_key, $consumer_secret);
 		
-		if(defined('OAUTH_REQENGINE_CURL'))
-			$this->_oauth->setRequestEngine(OAUTH_REQENGINE_CURL);
+		$this->_oauth = DevblocksPlatform::getOAuthService($consumer_key, $consumer_secret);
 	}
 	
 	/**
@@ -377,15 +373,19 @@ class WgmTwitter_API {
 	}
 	
 	public function setCredentials($token, $secret) {
-		$this->_oauth->setToken($token, $secret);
-	}
-	
-	public function getAccessToken() {
-		return $this->_oauth->getAccessToken(self::TWITTER_ACCESS_TOKEN_URL);
+		$this->_oauth->setTokens($token, $secret);
 	}
 	
 	public function getRequestToken($callback_url) {
-		return $this->_oauth->getRequestToken(self::TWITTER_REQUEST_TOKEN_URL, $callback_url);
+		return $this->_oauth->getRequestTokens(self::TWITTER_REQUEST_TOKEN_URL, $callback_url);
+	}
+	
+	public function getAuthenticationUrl($request_token) {
+		return $this->_oauth->getAuthenticationURL(self::TWITTER_AUTHENTICATE_URL, $request_token);
+	}
+	
+	public function getAccessToken($verifier) {
+		return $this->_oauth->getAccessToken(self::TWITTER_ACCESS_TOKEN_URL, array('oauth_verifier' => $verifier));
 	}
 	
 	public function post($url, $params) {
@@ -397,19 +397,8 @@ class WgmTwitter_API {
 	}
 	
 	private function _fetch($url, $method = 'GET', $params = array()) {
-		switch($method) {
-			case 'POST':
-				$method = OAUTH_HTTP_METHOD_POST;
-				break;
-				
-			default:
-				$method = OAUTH_HTTP_METHOD_GET;
-				break;
-		}
-
-		$this->_oauth->fetch($url, $params, $method);
-		
-		return $this->_oauth->getLastResponse();
+		// [TODO] Response object?
+		return $this->_oauth->executeRequest($method, $url, $params);
 	}
 };
 
@@ -435,6 +424,8 @@ class Cron_WgmTwitterChecker extends CerberusCronPageExtension {
 					$twitter_url .= sprintf("&since_id=%s", $account->last_synced_msgid);
 				
 				$out = $twitter->get($twitter_url);
+				
+				// [TODO] Handle utf8mb4
 			
 				if(false !== ($json = @json_decode($out, true))) {
 					foreach($json as $message) {
