@@ -1,3 +1,4 @@
+{$is_writeable = Context_ConnectedAccount::isReadableByActor($message->connected_account_id, $active_worker)}
 <form action="{devblocks_url}{/devblocks_url}" method="POST" id="frmTwitterMessage">
 <input type="hidden" name="c" value="profiles">
 <input type="hidden" name="a" value="handleSectionAction">
@@ -28,6 +29,7 @@
 	</tr>
 </table>
 
+{if $is_writeable}
 <fieldset class="peek">
 	<table cellspacing="0" cellpadding="2" border="0" width="98%">
 		<tr>
@@ -59,6 +61,7 @@
 <div class="toolbar">
 	<button type="button" class="submit" onclick="genericAjaxPopupPostCloseReloadView(null,'frmTwitterMessage','{$view_id}',false,'twitter_message_save');"><span class="glyphicons glyphicons-circle-ok" style="color:rgb(0,180,0);"></span> {'common.save_changes'|devblocks_translate|capitalize}</button>
 </div>
+{/if}
 
 </form>
 
@@ -70,6 +73,7 @@ $(function() {
 		{$account = $accounts.{$message->account_id}}
 		$popup.dialog('option','title',"{'wgm.twitter.common.message'|devblocks_translate|capitalize|escape:'javascript' nofilter}{if !empty($account)} @{$account->screen_name|escape:'javascript' nofilter}{/if}");
 		
+		{if $is_writeable}
 		var $txt = $popup.find('textarea:first').autosize().insertAtCursor('@{$message->user_screen_name|escape:'javascript'} ');;
 		var $counter = $popup.find('div.tweet-counter');
 		
@@ -92,6 +96,7 @@ $(function() {
 				$txt.hide().blur();
 			}
 		});
+		{/if}
 	});
 });
 </script>

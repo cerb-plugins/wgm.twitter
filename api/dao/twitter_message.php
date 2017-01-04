@@ -1,7 +1,7 @@
 <?php
 class DAO_TwitterMessage extends Cerb_ORMHelper {
 	const ID = 'id';
-	const ACCOUNT_ID = 'account_id';
+	const CONNECTED_ACCOUNT_ID = 'connected_account_id';
 	const TWITTER_ID = 'twitter_id';
 	const TWITTER_USER_ID = 'twitter_user_id';
 	const USER_NAME = 'user_name';
@@ -124,7 +124,7 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 		list($where_sql, $sort_sql, $limit_sql) = self::_getWhereSQL($where, $sortBy, $sortAsc, $limit);
 		
 		// SQL
-		$sql = "SELECT id, account_id, twitter_id, twitter_user_id, user_name, user_screen_name, user_followers_count, user_profile_image_url, created_date, is_closed, content ".
+		$sql = "SELECT id, connected_account_id, twitter_id, twitter_user_id, user_name, user_screen_name, user_followers_count, user_profile_image_url, created_date, is_closed, content ".
 			"FROM twitter_message ".
 			$where_sql.
 			$sort_sql.
@@ -166,7 +166,7 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 		while($row = mysqli_fetch_assoc($rs)) {
 			$object = new Model_TwitterMessage();
 			$object->id = $row['id'];
-			$object->account_id = $row['account_id'];
+			$object->connected_account_id = $row['connected_account_id'];
 			$object->twitter_id = $row['twitter_id'];
 			$object->twitter_user_id = $row['twitter_user_id'];
 			$object->user_name = $row['user_name'];
@@ -188,20 +188,6 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 		return self::_getRandom('twitter_message');
 	}
 	
-	static function deleteByAccounts($ids) {
-		if(!is_array($ids)) $ids = array($ids);
-		$db = DevblocksPlatform::getDatabaseService();
-		
-		if(empty($ids))
-			return;
-		
-		$ids_list = implode(',', $ids);
-		
-		$db->ExecuteMaster(sprintf("DELETE FROM twitter_message WHERE account_id IN (%s)", $ids_list));
-		
-		return true;
-	}
-	
 	static function delete($ids) {
 		if(!is_array($ids)) $ids = array($ids);
 		$db = DevblocksPlatform::getDatabaseService();
@@ -214,18 +200,16 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 		$db->ExecuteMaster(sprintf("DELETE FROM twitter_message WHERE id IN (%s)", $ids_list));
 		
 		// Fire event
-		/*
 		$eventMgr = DevblocksPlatform::getEventService();
 		$eventMgr->trigger(
 			new Model_DevblocksEvent(
 				'context.delete',
 				array(
-					'context' => 'cerberusweb.contexts.',
+					'context' => Context_TwitterMessage::ID,
 					'context_ids' => $ids
 				)
 			)
 		);
-		*/
 		
 		return true;
 	}
@@ -237,7 +221,7 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 		
 		$select_sql = sprintf("SELECT ".
 			"twitter_message.id as %s, ".
-			"twitter_message.account_id as %s, ".
+			"twitter_message.connected_account_id as %s, ".
 			"twitter_message.twitter_id as %s, ".
 			"twitter_message.twitter_user_id as %s, ".
 			"twitter_message.user_name as %s, ".
@@ -248,7 +232,7 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 			"twitter_message.is_closed as %s, ".
 			"twitter_message.content as %s ",
 				SearchFields_TwitterMessage::ID,
-				SearchFields_TwitterMessage::ACCOUNT_ID,
+				SearchFields_TwitterMessage::CONNECTED_ACCOUNT_ID,
 				SearchFields_TwitterMessage::TWITTER_ID,
 				SearchFields_TwitterMessage::TWITTER_USER_ID,
 				SearchFields_TwitterMessage::USER_NAME,
@@ -273,7 +257,6 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 			'join_sql' => &$join_sql,
 			'where_sql' => &$where_sql,
 			'tables' => &$tables,
-			'has_multiple_values' => &$has_multiple_values
 		);
 		
 		array_walk_recursive(
@@ -287,7 +270,6 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 			'select' => $select_sql,
 			'join' => $join_sql,
 			'where' => $where_sql,
-			'has_multiple_values' => $has_multiple_values,
 			'sort' => $sort_sql,
 		);
 	}
@@ -330,14 +312,12 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 		$select_sql = $query_parts['select'];
 		$join_sql = $query_parts['join'];
 		$where_sql = $query_parts['where'];
-		$has_multiple_values = $query_parts['has_multiple_values'];
 		$sort_sql = $query_parts['sort'];
 		
 		$sql =
 			$select_sql.
 			$join_sql.
 			$where_sql.
-			($has_multiple_values ? 'GROUP BY twitter_message.id ' : '').
 			$sort_sql;
 			
 		if($limit > 0) {
@@ -365,7 +345,7 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 			// We can skip counting if we have a less-than-full single page
 			if(!(0 == $page && $total < $limit)) {
 				$count_sql =
-					($has_multiple_values ? "SELECT COUNT(DISTINCT twitter_message.id) " : "SELECT COUNT(twitter_message.id) ").
+					"SELECT COUNT(twitter_message.id) ".
 					$join_sql.
 					$where_sql;
 				$total = $db->GetOneSlave($count_sql);
@@ -381,7 +361,7 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 
 class SearchFields_TwitterMessage extends DevblocksSearchFields {
 	const ID = 't_id';
-	const ACCOUNT_ID = 't_account_id';
+	const CONNECTED_ACCOUNT_ID = 't_connected_account_id';
 	const TWITTER_ID = 't_twitter_id';
 	const TWITTER_USER_ID = 't_twitter_user_id';
 	const USER_NAME = 't_user_name';
@@ -403,7 +383,6 @@ class SearchFields_TwitterMessage extends DevblocksSearchFields {
 	static function getCustomFieldContextKeys() {
 		return array(
 			Context_TwitterMessage::ID => new DevblocksSearchFieldContextKeys('twitter_message.id', self::ID),
-			'cerberusweb.contexts.twitter.account' => new DevblocksSearchFieldContextKeys('twitter_message.account_id', self::ACCOUNT_ID),
 		);
 	}
 	
@@ -433,7 +412,7 @@ class SearchFields_TwitterMessage extends DevblocksSearchFields {
 		
 		$columns = array(
 			self::ID => new DevblocksSearchField(self::ID, 'twitter_message', 'id', $translate->_('common.id'), null, true),
-			self::ACCOUNT_ID => new DevblocksSearchField(self::ACCOUNT_ID, 'twitter_message', 'account_id', $translate->_('dao.twitter_message.account_id'), null, true),
+			self::CONNECTED_ACCOUNT_ID => new DevblocksSearchField(self::CONNECTED_ACCOUNT_ID, 'twitter_message', 'connected_account_id', $translate->_('common.connected_account'), null, true),
 			self::TWITTER_ID => new DevblocksSearchField(self::TWITTER_ID, 'twitter_message', 'twitter_id', $translate->_('dao.twitter_message.twitter_id'), null, true),
 			self::TWITTER_USER_ID => new DevblocksSearchField(self::TWITTER_USER_ID, 'twitter_message', 'twitter_user_id', $translate->_('dao.twitter_message.twitter_user_id'), null, true),
 			self::USER_NAME => new DevblocksSearchField(self::USER_NAME, 'twitter_message', 'user_name', $translate->_('common.name'), Model_CustomField::TYPE_SINGLE_LINE, true),
@@ -463,7 +442,7 @@ class SearchFields_TwitterMessage extends DevblocksSearchFields {
 
 class Model_TwitterMessage {
 	public $id;
-	public $account_id;
+	public $connected_account_id;
 	public $twitter_id;
 	public $twitter_user_id;
 	public $user_name;
@@ -488,9 +467,9 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 		$this->renderSortAsc = true;
 
 		$this->view_columns = array(
+			SearchFields_TwitterMessage::CONNECTED_ACCOUNT_ID,
 			SearchFields_TwitterMessage::USER_NAME,
 			SearchFields_TwitterMessage::USER_FOLLOWERS_COUNT,
-			SearchFields_TwitterMessage::ACCOUNT_ID,
 			SearchFields_TwitterMessage::CREATED_DATE,
 		);
 		
@@ -616,9 +595,17 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 			'account' => 
 				array(
 					'type' => DevblocksSearchCriteria::TYPE_VIRTUAL,
-					'options' => array('param_key' => SearchFields_TwitterMessage::ACCOUNT_ID),
+					'options' => array('param_key' => SearchFields_TwitterMessage::CONNECTED_ACCOUNT_ID),
 					'examples' => array(
 						'cerb',
+					),
+			),
+			'account.id' => 
+				array(
+					'type' => DevblocksSearchCriteria::TYPE_NUMBER,
+					'options' => array('param_key' => SearchFields_TwitterMessage::CONNECTED_ACCOUNT_ID),
+					'examples' => array(
+						['type' => 'chooser', 'context' => CerberusContexts::CONTEXT_CONNECTED_ACCOUNT, 'q' => ''],
 					),
 			),
 			'content' => 
@@ -671,19 +658,19 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 	function getParamFromQuickSearchFieldTokens($field, $tokens) {
 		switch($field) {
 			case 'account':
-				$field_key = SearchFields_TwitterMessage::ACCOUNT_ID;
+				$field_key = SearchFields_TwitterMessage::CONNECTED_ACCOUNT_ID;
 				$oper = null;
 				$patterns = array();
 				
 				CerbQuickSearchLexer::getOperArrayFromTokens($tokens, $oper, $patterns);
 				
-				$accounts = DAO_TwitterAccount::getAll();
+				$accounts = DAO_ConnectedAccount::getByExtension(ServiceProvider_Twitter::ID);
 				$values = array();
 				
 				if(is_array($patterns))
 				foreach($patterns as $pattern) {
 					foreach($accounts as $account_id => $account) {
-						if(false !== stripos($account->screen_name, $pattern))
+						if(false !== stripos($account->name, $pattern))
 							$values[$account_id] = true;
 					}
 				}
@@ -710,21 +697,32 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 		$tpl = DevblocksPlatform::getTemplateService();
 		$tpl->assign('id', $this->id);
 		$tpl->assign('view', $this);
+		
+		$view_fields = $this->getColumnsAvailable();
+		$tpl->assign('view_fields', $view_fields);
+		
+		$results = $this->getData();
+		@list($data, $total) = $results;
+		$tpl->assign('total', $total);
+		$tpl->assign('data', $data);
+		
+		// Connected accounts
+		@$conn_acct_ids = array_unique(array_column($data, 't_connected_account_id'));
+		$connected_accounts = DAO_ConnectedAccount::getIds($conn_acct_ids);
+		$tpl->assign('connected_accounts', $connected_accounts);
 
 		// Custom fields
 		$custom_fields = DAO_CustomField::getByContext(Context_TwitterMessage::ID);
 		$tpl->assign('custom_fields', $custom_fields);
 
-		// Accounts
-		$twitter_accounts = DAO_TwitterAccount::getAll();
-		$tpl->assign('twitter_accounts', $twitter_accounts);
-		
 		$tpl->assign('view_template', 'devblocks:wgm.twitter::tweet/view.tpl');
 		$tpl->display('devblocks:cerberusweb.core::internal/views/subtotals_and_view.tpl');
 	}
 
 	function renderCriteria($field) {
 		$tpl = DevblocksPlatform::getTemplateService();
+		$active_worker = CerberusApplication::getActiveWorker();
+		
 		$tpl->assign('id', $this->id);
 
 		switch($field) {
@@ -749,14 +747,14 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 			case SearchFields_TwitterMessage::CREATED_DATE:
 				$tpl->display('devblocks:cerberusweb.core::internal/views/criteria/__date.tpl');
 				break;
-				
-			case SearchFields_TwitterMessage::ACCOUNT_ID:
+			
+			case SearchFields_TwitterMessage::CONNECTED_ACCOUNT_ID:
 				$options = array();
 
-				$accounts = DAO_TwitterAccount::getAll();
+				$accounts = DAO_ConnectedAccount::getReadableByActor($active_worker, ServiceProvider_Twitter::ID);
 				if(is_array($accounts))
 				foreach($accounts as $account) {
-					$options[$account->id] = $account->screen_name;
+					$options[$account->id] = $account->name;
 				}
 				$tpl->assign('options', $options);
 				
@@ -781,23 +779,23 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 	function renderCriteriaParam($param) {
 		$field = $param->field;
 		$values = !is_array($param->value) ? array($param->value) : $param->value;
+		$active_worker = CerberusApplication::getActiveWorker();
 
 		switch($field) {
 			case SearchFields_TwitterMessage::IS_CLOSED:
 				parent::_renderCriteriaParamBoolean($param);
 				break;
 				
-			case SearchFields_TwitterMessage::ACCOUNT_ID:
-				$accounts = DAO_TwitterAccount::getAll();
+			case SearchFields_TwitterMessage::CONNECTED_ACCOUNT_ID:
+				$accounts = DAO_ConnectedAccount::getReadableByActor($active_worker, ServiceProvider_Twitter::ID);
 				$strings = array();
 				
 				foreach($values as $account_id) {
 					if(isset($accounts[$account_id]))
-						$strings[] = DevblocksPlatform::strEscapeHtml($accounts[$account_id]->screen_name);
+						$strings[] = DevblocksPlatform::strEscapeHtml($accounts[$account_id]->name);
 				}
 				
 				echo implode(' or ', $strings);
-				
 				break;
 			
 			default:
@@ -849,7 +847,7 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 				$criteria = new DevblocksSearchCriteria($field,$oper,$bool);
 				break;
 				
-			case SearchFields_TwitterMessage::ACCOUNT_ID:
+			case SearchFields_TwitterMessage::CONNECTED_ACCOUNT_ID:
 				@$options = DevblocksPlatform::importGPC($_REQUEST['options'],'array',array());
 				$options = DevblocksPlatform::sanitizeArray($options, 'integer', array('nonzero','unique'));
 				$criteria = new DevblocksSearchCriteria($field,$oper,$options);
@@ -877,6 +875,16 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 
 class Context_TwitterMessage extends Extension_DevblocksContext {
 	const ID = 'cerberusweb.contexts.twitter.message';
+	
+	static function isReadableByActor($models, $actor) {
+		// Everyone can view
+		return CerberusContexts::allowEverything($models);
+	}
+	
+	static function isWriteableByActor($models, $actor) {
+		// Everyone can modify
+		return CerberusContexts::allowEverything($models);
+	}
 	
 	function getRandom() {
 		return DAO_TwitterMessage::random();
@@ -1029,10 +1037,15 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 		
 		if(!$is_loaded) {
 			$labels = array();
-			CerberusContexts::getContext($context, $context_id, $labels, $values, null, true);
+			CerberusContexts::getContext($context, $context_id, $labels, $values, null, true, true);
 		}
 		
 		switch($token) {
+			case 'links':
+				$links = $this->_lazyLoadLinks($context, $context_id);
+				$values = array_merge($values, $fields);
+				break;
+			
 			case 'watchers':
 				$watchers = array(
 					$token => CerberusContexts::getWatchers($context, $context_id, true),
@@ -1041,7 +1054,7 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 				break;
 				
 			default:
-				if(substr($token,0,7) == 'custom_') {
+				if(DevblocksPlatform::strStartsWith($token, 'custom_')) {
 					$fields = $this->_lazyLoadCustomFields($token, $context, $context_id);
 					$values = array_merge($values, $fields);
 				}
@@ -1088,6 +1101,7 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 		
 		$params_req = array();
 		
+		// [TODO] virtual_context_link
 		if(!empty($context) && !empty($context_id)) {
 			$params_req = array(
 				new DevblocksSearchCriteria(SearchFields_TwitterMessage::CONTEXT_LINK,'=',$context),

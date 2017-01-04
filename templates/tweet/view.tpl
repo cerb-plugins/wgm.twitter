@@ -1,8 +1,4 @@
 {$view_context = Context_TwitterMessage::ID}
-{$view_fields = $view->getColumnsAvailable()}
-{$results = $view->getData()}
-{$total = $results[1]}
-{$data = $results[0]}
 <table cellpadding="0" cellspacing="0" border="0" class="worklist" width="100%">
 	<tr>
 		<td nowrap="nowrap"><span class="title">{$view->name}</span></td>
@@ -90,12 +86,13 @@
 						{$result.$column|devblocks_prettytime}&nbsp;
 					{/if}
 				</td>
-			{elseif $column=="t_account_id"}
+			{elseif $column=="t_connected_account_id"}
 				<td data-column="{$column}">
-				{$account = $twitter_accounts.{$result.$column}}
-				{if !empty($account)}
-					@{$account->screen_name}
-				{/if}
+					{$conn_acct_id = $result.$column}
+					{$conn_acct = $connected_accounts.$conn_acct_id}
+					{if $conn_acct}
+						<a href="javascript:" class="cerb-peek-trigger no-underline" data-context="{CerberusContexts::CONTEXT_CONNECTED_ACCOUNT}" data-context-id="{$conn_acct->id}">{$conn_acct->name}</a>
+					{/if}
 				</td>
 			{elseif $column=="t_user_screen_name"}
 				<td data-column="{$column}">

@@ -1,66 +1,64 @@
-<div style="float:left;">
-	<h2>{'wgm.twitter.common'|devblocks_translate}</h2>
-</div>
+<h2>{'wgm.twitter.common'|devblocks_translate}</h2>
 
-<div style="float:right;">
-	{include file="devblocks:cerberusweb.core::search/quick_search.tpl" view=$view return_url=null reset=false}
-</div>
+<form action="javascript:;" method="post" id="frmSetupTwitter" onsubmit="return false;">
+<input type="hidden" name="c" value="config">
+<input type="hidden" name="a" value="handleSectionAction">
+<input type="hidden" name="section" value="twitter">
+<input type="hidden" name="action" value="saveJson">
+<input type="hidden" name="_csrf_token" value="{$session.csrf_token}">
 
-<br clear="all">
+<div class="status"></div>
 
-{* [TODO] Move this to an 'add' popup on the worklist *}
 <fieldset>
 	<legend>Twitter Application</legend>
 	
-	<form action="javascript:;" method="post" id="frmSetupTwitter" onsubmit="return false;">
-	<input type="hidden" name="c" value="config">
-	<input type="hidden" name="a" value="handleSectionAction">
-	<input type="hidden" name="section" value="twitter">
-	<input type="hidden" name="action" value="saveJson">
-	<input type="hidden" name="_csrf_token" value="{$session.csrf_token}">
+	<b>Consumer ID:</b><br>
+	<input type="text" name="consumer_key" value="{$credentials.consumer_key}" size="45"><br>
+	<br>
 	
-		<table cellpadding="0" cellspacing="0" border="0">
-			<tr>
-				<td>
-					<b>Consumer key:</b>
-				</td>
-				<td>
-					<b>Consumer secret:</b>
-				</td>
-				<td>
-				</td>
-			</tr>
-			<tr>
-				<td>
-					<input type="text" name="consumer_key" value="{$params.consumer_key}" size="45">
-				</td>
-				<td>
-					<input type="password" name="consumer_secret" value="" size="45">
-				</td>
-				<td>
-					<button type="button" class="submit"><span class="glyphicons glyphicons-circle-ok" style="color:rgb(0,180,0);"></span> {'common.save_changes'|devblocks_translate|capitalize}</button>	
-				</td>
-			</tr>
-		</table>
+	<b>Consumer Secret:</b><br>
+	<input type="password" name="consumer_secret" value="{$credentials.consumer_secret}" size="45"><br>
+	<br>
 	
-		<div class="status"></div>
-	</form>
-	
-	<form action="{devblocks_url}ajax.php{/devblocks_url}" method="post" id="frmAuthTwitter" style="margin-top:10px;display: {if $params.consumer_key && $params.consumer_secret}block{else}none{/if}">
-	<input type="hidden" name="c" value="config">
-	<input type="hidden" name="a" value="handleSectionAction">
-	<input type="hidden" name="section" value="twitter">
-	<input type="hidden" name="action" value="auth">
-	<input type="hidden" name="_csrf_token" value="{$session.csrf_token}">
-		<input type="image" src="{devblocks_url}c=resource&p=wgm.twitter&f=sign_in_with_twitter.png{/devblocks_url}">
-	</form>
+	<button type="button" class="submit"><span class="glyphicons glyphicons-circle-ok" style="color:rgb(0,180,0);"></span> {'common.save_changes'|devblocks_translate|capitalize}</button>
 </fieldset>
 
-{include file="devblocks:cerberusweb.core::internal/views/search_and_view.tpl" view=$view}
+<fieldset>
+	<legend>Synchronization</legend>
+	
+	<b>Download @mentions as Twitter Message records for these connected accounts:</b><br>
+	<button type="button" class="chooser-abstract" data-field-name="sync_account_ids[]" data-context="{CerberusContexts::CONTEXT_CONNECTED_ACCOUNT}" data-query="service:twitter"><span class="glyphicons glyphicons-search"></span></button>
+	<ul class="bubbles chooser-container">
+		{if $sync_accounts}
+		{foreach from=$sync_accounts item=sync_account}
+		<li>
+			<input type="hidden" name="sync_account_ids[]" value="{$sync_account->id}">
+			<a href="javascript:;" class="cerb-peek-trigger no-underline" data-context="{CerberusContexts::CONTEXT_CONNECTED_ACCOUNT}" data-context-id="{$sync_account->id}">{$sync_account->name}</a>
+		</li>
+		{/foreach}
+		{/if}
+	</ul>
+	<br>
+	<br>
+	
+	<button type="button" class="submit"><span class="glyphicons glyphicons-circle-ok" style="color:rgb(0,180,0);"></span> {'common.save_changes'|devblocks_translate|capitalize}</button>	
+</fieldset>
+
+</form>
 
 <script type="text/javascript">
 $(function() {
-	$('#frmSetupTwitter BUTTON.submit')
+	var $frm = $('#frmSetupTwitter');
+	
+	$frm.find('.cerb-peek-trigger')
+		.cerbPeekTrigger()
+		;
+
+	$frm.find('.chooser-abstract')
+		.cerbChooserTrigger()
+		;
+	
+	$frm.find('BUTTON.submit')
 		.click(function(e) {
 			genericAjaxPost('frmSetupTwitter','',null,function(json) {
 				$o = $.parseJSON(json);

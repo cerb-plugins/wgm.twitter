@@ -1,22 +1,22 @@
 Cerb Plugins - wgm.twitter
 ===========================================
-Copyright (C) 2012 Webgroup Media, LLC.  
-[http://www.cerberusweb.com/](http://www.cerberusweb.com/)  
+Copyright (C) 2017 Webgroup Media, LLC.  
+[http://cerb.io/](http://cerb.io/)  
 
 What's this?
 ------------
-This plugin provides integration with [Twitter](http://www.twitter.com/) via their API. This plugin is intended to be a bridge used by other plugins to communicate with Twitter services. The plugin introduces record types for Twitter Accounts and Messages.  It supports multiple accounts;  @mentions are automatically synchronized and messages can be replied to from within Cerb.  In addition, it adds a new Virtual Attendant action with the ability to post status updates to Twitter.
+This plugin provides integration with [Twitter](http://www.twitter.com/) via their API. This plugin is intended to be a bridge used by other plugins to communicate with Twitter services. The plugin introduces record types for Twitter Messages.  It supports multiple accounts;  @mentions are automatically synchronized and messages can be replied to from within Cerb.  In addition, it adds a new bot action with the ability to post status updates to Twitter.
 
 Installation
 ------------
 * Make a new [Twitter Developer Application](https://dev.twitter.com/apps/new)
 * In your helpdesk, download the plugin from **Setup->Plugins->Library**.
-* Click **Setup->Plugins->Twitter** and configure your Twitter app credentials.
+* Click **Setup->Services->Twitter** and configure your Twitter app credentials.
 * Authorize the app for the users you wish to be available to the plugin.
 
 Credits
 -------
-This plugin was developed by [WebGroup Media, LLC](http://www.cerberusweb.com/).
+This plugin was developed by [Webgroup Media, LLC](http://cerb.io/).
 
 License
 -------
