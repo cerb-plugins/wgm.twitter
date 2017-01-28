@@ -17,7 +17,7 @@ if(!is_null($consumer_key) || !is_null($consumer_secret)) {
 	];
 	
 	$settings->set('wgm.twitter', 'credentials', $credentials, true, true);
-	$settings->delete('wgm.twitter', ['consumer_key','consumer_secret']);
+	$settings->delete('wgm.twitter', ['consumer_key','consumer_secret','users']);
 }
 
 // ===========================================================================

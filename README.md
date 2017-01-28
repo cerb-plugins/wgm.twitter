@@ -1,7 +1,7 @@
 Cerb Plugins - wgm.twitter
 ===========================================
 Copyright (C) 2017 Webgroup Media, LLC.  
-[http://cerb.io/](http://cerb.io/)  
+[http://cerb.ai/](http://cerb.ai/)  
 
 What's this?
 ------------
@@ -16,7 +16,7 @@ Installation
 
 Credits
 -------
-This plugin was developed by [Webgroup Media, LLC](http://cerb.io/).
+This plugin was developed by [Webgroup Media, LLC](http://cerb.ai/).
 
 License
 -------
