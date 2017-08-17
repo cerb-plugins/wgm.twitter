@@ -542,9 +542,10 @@ class ServiceProvider_Twitter extends Extension_ServiceProvider implements IServ
 		
 		$url_writer = DevblocksPlatform::getUrlService();
 
-		// [TODO] Report about missing app keys
-		if(false == ($app_keys = $this->_getAppKeys()))
+		if(false == ($app_keys = $this->_getAppKeys())) {
+			echo DevblocksPlatform::strEscapeHtml("ERROR: The consumer key and secret aren't configured in Setup->Services->Twitter.");
 			return false;
+		}
 		
 		$oauth = DevblocksPlatform::getOAuthService($app_keys['key'], $app_keys['secret']);
 		
@@ -553,8 +554,10 @@ class ServiceProvider_Twitter extends Extension_ServiceProvider implements IServ
 		
 		$tokens = $oauth->getRequestTokens(WgmTwitter_API::TWITTER_REQUEST_TOKEN_URL, $redirect_url);
 		
-		if(!isset($tokens['oauth_token']))
+		if(!isset($tokens['oauth_token'])) {
+			echo DevblocksPlatform::strEscapeHtml("ERROR: Twitter didn't return an access token.");
 			return false;
+		}
 		
 		$url = $oauth->getAuthenticationURL(WgmTwitter_API::TWITTER_AUTHENTICATE_URL, $tokens['oauth_token']);
 		
@@ -569,8 +572,10 @@ class ServiceProvider_Twitter extends Extension_ServiceProvider implements IServ
 		$encrypt = DevblocksPlatform::getEncryptionService();
 		$active_worker = CerberusApplication::getActiveWorker();
 		
-		if(false == ($app_keys = $this->_getAppKeys()))
+		if(false == ($app_keys = $this->_getAppKeys())) {
+			echo DevblocksPlatform::strEscapeHtml("ERROR: The consumer key and secret aren't configured in Setup->Services->Twitter.");
 			return false;
+		}
 		
 		$oauth_token = $_REQUEST['oauth_token'];
 		$oauth_verifier = $_REQUEST['oauth_verifier'];
@@ -581,6 +586,7 @@ class ServiceProvider_Twitter extends Extension_ServiceProvider implements IServ
 		$params = $oauth->getAccessToken(WgmTwitter_API::TWITTER_ACCESS_TOKEN_URL, array('oauth_verifier' => $oauth_verifier));
 		
 		if(!is_array($params) || !isset($params['screen_name'])) {
+			echo DevblocksPlatform::strEscapeHtml("ERROR: We couldn't retrieve your username from the Twitter API.");
 			return false;
 		}
 		
