@@ -36,7 +36,7 @@
 			<td width="1%" nowrap="nowrap" valign="top"><label><b>Reply:</b> <input type="checkbox" name="do_reply" value="1" checked="checked"></label></td>
 			<td width="99%" valign="top">
 				<textarea name="reply" rows="5" cols="80" style="width:98%;height:50px;"></textarea>
-				<div class="tweet-counter"</div>
+				<div class="tweet-counter"></div>
 			</td>
 		</tr>
 		<tr>

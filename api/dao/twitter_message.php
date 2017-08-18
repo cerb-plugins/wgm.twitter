@@ -1,19 +1,90 @@
 <?php
 class DAO_TwitterMessage extends Cerb_ORMHelper {
-	const ID = 'id';
 	const CONNECTED_ACCOUNT_ID = 'connected_account_id';
+	const CONTENT = 'content';
+	const CREATED_DATE = 'created_date';
+	const ID = 'id';
+	const IS_CLOSED = 'is_closed';
 	const TWITTER_ID = 'twitter_id';
 	const TWITTER_USER_ID = 'twitter_user_id';
-	const USER_NAME = 'user_name';
-	const USER_SCREEN_NAME = 'user_screen_name';
 	const USER_FOLLOWERS_COUNT = 'user_followers_count';
+	const USER_NAME = 'user_name';
 	const USER_PROFILE_IMAGE_URL = 'user_profile_image_url';
-	const CREATED_DATE = 'created_date';
-	const IS_CLOSED = 'is_closed';
-	const CONTENT = 'content';
+	const USER_SCREEN_NAME = 'user_screen_name';
+	
+	private function __construct() {}
+
+	static function getFields() {
+		$validation = DevblocksPlatform::services()->validation();
+		
+		// int(10) unsigned
+		$validation
+			->addField(self::CONNECTED_ACCOUNT_ID)
+			->id()
+			;
+		// varchar(255)
+		$validation
+			->addField(self::CONTENT)
+			->string()
+			->setMaxLength(255)
+			;
+		// int(10) unsigned
+		$validation
+			->addField(self::CREATED_DATE)
+			->timestamp()
+			;
+		// int(10) unsigned
+		$validation
+			->addField(self::ID)
+			->id()
+			->setEditable(false)
+			;
+		// tinyint(3) unsigned
+		$validation
+			->addField(self::IS_CLOSED)
+			->bit()
+			;
+		// varchar(128)
+		$validation
+			->addField(self::TWITTER_ID)
+			->string()
+			->setMaxLength(128)
+			;
+		// varchar(128)
+		$validation
+			->addField(self::TWITTER_USER_ID)
+			->string()
+			->setMaxLength(128)
+			;
+		// int(10) unsigned
+		$validation
+			->addField(self::USER_FOLLOWERS_COUNT)
+			->uint(4)
+			;
+		// varchar(128)
+		$validation
+			->addField(self::USER_NAME)
+			->string()
+			->setMaxLength(128)
+			;
+		// varchar(255)
+		$validation
+			->addField(self::USER_PROFILE_IMAGE_URL)
+			->string()
+			->setMaxLength(255)
+			;
+		// varchar(128)
+		$validation
+			->addField(self::USER_SCREEN_NAME)
+			->string()
+			->setMaxLength(128)
+			;
+
+		return $validation->getFields();
+	}
 
 	static function create($fields) {
-		$db = DevblocksPlatform::getDatabaseService();
+		$db = DevblocksPlatform::services()->database();
 		
 		$sql = "INSERT INTO twitter_message () VALUES ()";
 		$db->ExecuteMaster($sql);
@@ -47,7 +118,7 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 			if($check_deltas) {
 				
 				// Trigger an event about the changes
-				$eventMgr = DevblocksPlatform::getEventService();
+				$eventMgr = DevblocksPlatform::services()->event();
 				$eventMgr->trigger(
 					new Model_DevblocksEvent(
 						'dao.twitter_message.update',
@@ -119,7 +190,7 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 	 * @return Model_TwitterMessage[]
 	 */
 	static function getWhere($where=null, $sortBy=null, $sortAsc=true, $limit=null) {
-		$db = DevblocksPlatform::getDatabaseService();
+		$db = DevblocksPlatform::services()->database();
 
 		list($where_sql, $sort_sql, $limit_sql) = self::_getWhereSQL($where, $sortBy, $sortAsc, $limit);
 		
@@ -190,7 +261,7 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 	
 	static function delete($ids) {
 		if(!is_array($ids)) $ids = array($ids);
-		$db = DevblocksPlatform::getDatabaseService();
+		$db = DevblocksPlatform::services()->database();
 		
 		if(empty($ids))
 			return;
@@ -200,7 +271,7 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 		$db->ExecuteMaster(sprintf("DELETE FROM twitter_message WHERE id IN (%s)", $ids_list));
 		
 		// Fire event
-		$eventMgr = DevblocksPlatform::getEventService();
+		$eventMgr = DevblocksPlatform::services()->event();
 		$eventMgr->trigger(
 			new Model_DevblocksEvent(
 				'context.delete',
@@ -304,7 +375,7 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 	 * @return array
 	 */
 	static function search($columns, $params, $limit=10, $page=0, $sortBy=null, $sortAsc=null, $withCounts=true) {
-		$db = DevblocksPlatform::getDatabaseService();
+		$db = DevblocksPlatform::services()->database();
 		
 		// Build search queries
 		$query_parts = self::getSearchQueryComponents($columns,$params,$sortBy,$sortAsc);
@@ -694,7 +765,7 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 	function render() {
 		$this->_sanitize();
 		
-		$tpl = DevblocksPlatform::getTemplateService();
+		$tpl = DevblocksPlatform::services()->template();
 		$tpl->assign('id', $this->id);
 		$tpl->assign('view', $this);
 		
@@ -720,7 +791,7 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 	}
 
 	function renderCriteria($field) {
-		$tpl = DevblocksPlatform::getTemplateService();
+		$tpl = DevblocksPlatform::services()->template();
 		$active_worker = CerberusApplication::getActiveWorker();
 		
 		$tpl->assign('id', $this->id);
@@ -892,7 +963,7 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 	
 	function getMeta($context_id) {
 		$tweet = DAO_TwitterMessage::get($context_id);
-		$url_writer = DevblocksPlatform::getUrlService();
+		$url_writer = DevblocksPlatform::services()->url();
 		
 		//$friendly = DevblocksPlatform::strToPermalink($example->name);
 		
@@ -1018,11 +1089,25 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 			$token_values = $this->_importModelCustomFieldsAsValues($tweet, $token_values);
 			
 			// URL
-			//$url_writer = DevblocksPlatform::getUrlService();
+			//$url_writer = DevblocksPlatform::services()->url();
 			//$token_values['record_url'] = $url_writer->writeNoProxy(sprintf("c=example.object&id=%d-%s",$tweet->id, DevblocksPlatform::strToPermalink($tweet->name)), true);
 		}
 
 		return true;
+	}
+	
+	function getKeyToDaoFieldMap() {
+		return [
+			'content' => DAO_TwitterMessage::CONTENT,
+			'created' => DAO_TwitterMessage::CREATED_DATE,
+			'id' => DAO_TwitterMessage::ID,
+			'is_closed' => DAO_TwitterMessage::IS_CLOSED,
+			'twitter_id' => DAO_TwitterMessage::TWITTER_ID,
+			'user_followers_count' => DAO_TwitterMessage::USER_FOLLOWERS_COUNT,
+			'user_name' => DAO_TwitterMessage::USER_NAME,
+			'user_profile_image_url' => DAO_TwitterMessage::USER_PROFILE_IMAGE_URL,
+			'user_screen_name' => DAO_TwitterMessage::USER_SCREEN_NAME,
+		];
 	}
 
 	function lazyLoadContextValues($token, $dictionary) {
