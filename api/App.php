@@ -396,7 +396,6 @@ class Cron_WgmTwitterChecker extends CerberusCronPageExtension {
 };
 endif;
 
-if(class_exists('Extension_DevblocksEventAction')):
 class WgmTwitter_EventActionPost extends Extension_DevblocksEventAction {
 	function render(Extension_DevblocksEvent $event, Model_TriggerEvent $trigger, $params=array(), $seq=null) {
 		$active_worker = CerberusApplication::getActiveWorker();
@@ -479,7 +478,6 @@ class WgmTwitter_EventActionPost extends Extension_DevblocksEventAction {
 		}
 	}
 };
-endif;
 
 class ServiceProvider_Twitter extends Extension_ServiceProvider implements IServiceProvider_OAuth, IServiceProvider_HttpRequestSigner {
 	const ID = 'wgm.twitter.service.provider';

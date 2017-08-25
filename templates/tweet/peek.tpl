@@ -1,3 +1,4 @@
+{$peek_context = Context_TwitterMessage::ID}
 {$is_writeable = Context_ConnectedAccount::isReadableByActor($message->connected_account_id, $active_worker)}
 <form action="{devblocks_url}{/devblocks_url}" method="POST" id="frmTwitterMessage">
 <input type="hidden" name="c" value="profiles">
@@ -29,7 +30,7 @@
 	</tr>
 </table>
 
-{if $is_writeable}
+{if $is_writeable && $active_worker->hasPriv("contexts.{$peek_context}.update")}
 <fieldset class="peek">
 	<table cellspacing="0" cellpadding="2" border="0" width="98%">
 		<tr>
@@ -73,7 +74,7 @@ $(function() {
 		{$account = $accounts.{$message->account_id}}
 		$popup.dialog('option','title',"{'wgm.twitter.common.message'|devblocks_translate|capitalize|escape:'javascript' nofilter}{if !empty($account)} @{$account->screen_name|escape:'javascript' nofilter}{/if}");
 		
-		{if $is_writeable}
+		{if $is_writeable && $active_worker->hasPriv("contexts.{$peek_context}.update")}
 		var $txt = $popup.find('textarea:first').autosize().insertAtCursor('@{$message->user_screen_name|escape:'javascript'} ');;
 		var $counter = $popup.find('div.tweet-counter');
 		
