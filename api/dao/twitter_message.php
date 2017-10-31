@@ -79,7 +79,12 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 			->string()
 			->setMaxLength(128)
 			;
-
+		$validation
+			->addField('_links')
+			->string()
+			->setMaxLength(65535)
+			;
+			
 		return $validation->getFields();
 	}
 
@@ -98,6 +103,9 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 	static function update($ids, $fields, $check_deltas=true) {
 		if(!is_array($ids))
 			$ids = array($ids);
+		
+		$context = Context_TwitterMessage::ID;
+		self::_updateAbstract($context, $ids, $fields);
 		
 		// Make a diff for the requested objects in batches
 		
@@ -601,13 +609,13 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 					break;
 					
 				// Virtuals
- 				case SearchFields_TwitterMessage::VIRTUAL_HAS_FIELDSET:
- 					$pass = true;
- 					break;
+				case SearchFields_TwitterMessage::VIRTUAL_HAS_FIELDSET:
+					$pass = true;
+					break;
 					
 				// Valid custom fields
 				default:
-					if('cf_' == substr($field_key,0,3))
+					if(DevblocksPlatform::strStartsWith($field_key, 'cf_'))
 						$pass = $this->_canSubtotalCustomField($field_key);
 					break;
 			}
@@ -946,6 +954,10 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 class Context_TwitterMessage extends Extension_DevblocksContext {
 	const ID = 'cerberusweb.contexts.twitter.message';
 	
+	static function isCreateableByActor(array $fields, $actor) {
+		return false;
+	}
+	
 	static function isReadableByActor($models, $actor) {
 		// Everyone can view
 		return CerberusContexts::allowEverything($models);
@@ -1101,12 +1113,23 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 			'created' => DAO_TwitterMessage::CREATED_DATE,
 			'id' => DAO_TwitterMessage::ID,
 			'is_closed' => DAO_TwitterMessage::IS_CLOSED,
+			'links' => '_links',
 			'twitter_id' => DAO_TwitterMessage::TWITTER_ID,
 			'user_followers_count' => DAO_TwitterMessage::USER_FOLLOWERS_COUNT,
 			'user_name' => DAO_TwitterMessage::USER_NAME,
 			'user_profile_image_url' => DAO_TwitterMessage::USER_PROFILE_IMAGE_URL,
 			'user_screen_name' => DAO_TwitterMessage::USER_SCREEN_NAME,
 		];
+	}
+	
+	function getDaoFieldsFromKeyAndValue($key, $value, &$out_fields, &$error) {
+		switch(DevblocksPlatform::strLower($key)) {
+			case 'links':
+				$this->_getDaoFieldsLinks($value, $out_fields, $error);
+				break;
+		}
+		
+		return true;
 	}
 
 	function lazyLoadContextValues($token, $dictionary) {
