@@ -954,10 +954,6 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 class Context_TwitterMessage extends Extension_DevblocksContext {
 	const ID = 'cerberusweb.contexts.twitter.message';
 	
-	static function isCreateableByActor(array $fields, $actor) {
-		return false;
-	}
-	
 	static function isReadableByActor($models, $actor) {
 		// Everyone can view
 		return CerberusContexts::allowEverything($models);
