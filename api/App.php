@@ -371,7 +371,7 @@ class Cron_WgmTwitterChecker extends CerberusCronPageExtension {
 						DAO_TwitterMessage::IS_CLOSED => 0,
 						DAO_TwitterMessage::USER_NAME => $message['user']['name'],
 						DAO_TwitterMessage::USER_SCREEN_NAME => $message['user']['screen_name'],
-						DAO_TwitterMessage::USER_PROFILE_IMAGE_URL => $message['user']['profile_image_url'],
+						DAO_TwitterMessage::USER_PROFILE_IMAGE_URL => $message['user']['profile_image_url_https'],
 						DAO_TwitterMessage::USER_FOLLOWERS_COUNT => $message['user']['followers_count'],
 						DAO_TwitterMessage::CONTENT => $message['text'],
 					);
