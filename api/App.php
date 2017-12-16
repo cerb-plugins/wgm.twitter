@@ -350,7 +350,7 @@ class Cron_WgmTwitterChecker extends CerberusCronPageExtension {
 			
 			$twitter->setCredentials($credentials['oauth_token'], $credentials['oauth_token_secret']);
 			
-			$twitter_url = WgmTwitter_API::TWITTER_STATUSES_MENTIONS_API . '?count=150';
+			$twitter_url = WgmTwitter_API::TWITTER_STATUSES_MENTIONS_API . '?count=150&tweet_mode=extended';
 			
 			$max_id = $db->GetOneMaster(sprintf("SELECT MAX(CAST(twitter_id as unsigned)) FROM twitter_message WHERE connected_account_id = %d", $account->id));
 			
@@ -373,7 +373,7 @@ class Cron_WgmTwitterChecker extends CerberusCronPageExtension {
 						DAO_TwitterMessage::USER_SCREEN_NAME => $message['user']['screen_name'],
 						DAO_TwitterMessage::USER_PROFILE_IMAGE_URL => $message['user']['profile_image_url_https'],
 						DAO_TwitterMessage::USER_FOLLOWERS_COUNT => $message['user']['followers_count'],
-						DAO_TwitterMessage::CONTENT => $message['text'],
+						DAO_TwitterMessage::CONTENT => $message['full_text'],
 					);
 					
 					$tweet_id = DAO_TwitterMessage::create($fields);
