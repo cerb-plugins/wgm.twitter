@@ -40,7 +40,7 @@ if(!isset($tables['twitter_message'])) {
 			user_profile_image_url VARCHAR(255) NOT NULL DEFAULT '',
 			created_date INT UNSIGNED NOT NULL DEFAULT 0,
 			is_closed TINYINT UNSIGNED NOT NULL DEFAULT 0,
-			content VARCHAR(255) NOT NULL DEFAULT '',
+			content VARCHAR(320) NOT NULL DEFAULT '',
 			PRIMARY KEY (id),
 			INDEX created_date (created_date),
 			INDEX account_id (account_id)

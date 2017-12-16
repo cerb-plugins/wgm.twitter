@@ -22,11 +22,11 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 			->addField(self::CONNECTED_ACCOUNT_ID)
 			->id()
 			;
-		// varchar(255)
+		// varchar(320)
 		$validation
 			->addField(self::CONTENT)
 			->string()
-			->setMaxLength(255)
+			->setMaxLength(320)
 			;
 		// int(10) unsigned
 		$validation
