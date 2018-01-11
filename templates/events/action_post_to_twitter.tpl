@@ -23,10 +23,3 @@
 <div style="margin-left:10px;margin-bottom:10px;">
 	<textarea name="{$namePrefix}[content]" rows="3" cols="45" style="width:100%;" class="placeholders">{$params.content}</textarea>
 </div>
-
-<script type="text/javascript">
-$(function() {
-	var $action = $('fieldset#{$namePrefix}');
-	$action.find('textarea').autosize();
-});
-</script>
