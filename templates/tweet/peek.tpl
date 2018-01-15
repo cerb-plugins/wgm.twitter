@@ -66,6 +66,7 @@
 
 </form>
 
+<script type="text/javascript" src="{devblocks_url}c=resource&p=wgm.twitter&f=twitter-text-2.0.0.min.js{/devblocks_url}"></script>
 <script type="text/javascript">
 $(function() {
 	var $popup = genericAjaxPopupFetch('peek');
@@ -75,14 +76,15 @@ $(function() {
 		$popup.dialog('option','title',"{'wgm.twitter.common.message'|devblocks_translate|capitalize|escape:'javascript' nofilter}{if !empty($account)} @{$account->screen_name|escape:'javascript' nofilter}{/if}");
 		
 		{if $is_writeable && $active_worker->hasPriv("contexts.{$peek_context}.update")}
-		var $txt = $popup.find('textarea:first').autosize().insertAtCursor('@{$message->user_screen_name|escape:'javascript'} ');;
+		var $txt = $popup.find('textarea:first').autosize().insertAtCursor('@{$message->user_screen_name|escape:'javascript'} ');
 		var $counter = $popup.find('div.tweet-counter');
 		
 		$txt.on('keyup', function() {
-			var limit = 140 - $txt.val().length;
-			$counter.text(limit);
+            var parsedTweet = twttr.txt.parseTweet($txt.val());
+			var percentage = Math.round(parsedTweet.permillage / 10);
+			$counter.text(percentage + '%');
 			
-			if(limit < 0) {
+			if(percentage >= 100) {
 				$counter.css('color','red');
 			} else {
 				$counter.css('color','green');

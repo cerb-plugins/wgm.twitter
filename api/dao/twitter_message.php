@@ -22,11 +22,11 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 			->addField(self::CONNECTED_ACCOUNT_ID)
 			->id()
 			;
-		// varchar(255)
+		// varchar(320)
 		$validation
 			->addField(self::CONTENT)
 			->string()
-			->setMaxLength(255)
+			->setMaxLength(320)
 			;
 		// int(10) unsigned
 		$validation
@@ -1086,7 +1086,7 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 			$token_values['is_closed'] = $tweet->is_closed;
 			$token_values['content'] = $tweet->content;
 			$token_values['twitter_id'] = $tweet->twitter_id;
-			$token_values['twitter_url'] = sprintf("http://twitter.com/%s/status/%s", $tweet->user_screen_name, $tweet->twitter_id);
+			$token_values['twitter_url'] = sprintf("https://twitter.com/%s/status/%s", $tweet->user_screen_name, $tweet->twitter_id);
 			$token_values['user_followers_count'] = $tweet->user_followers_count;
 			$token_values['user_name'] = $tweet->user_name;
 			$token_values['user_profile_image_url'] = $tweet->user_profile_image_url;
