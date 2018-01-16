@@ -25,6 +25,7 @@
 	<patches>
 		<patch version="6.0.0" revision="3" file="patches/6.0.0.php" />
 		<patch version="7.3.0" revision="4" file="patches/7.3.0.php" />
+		<patch version="8.2.0" revision="6" file="patches/8.2.0.php" />
 	</patches>
 	
 	<!-- Exported Classes -->
