@@ -73,8 +73,9 @@ class WgmTwitter_MessageProfileSection extends Extension_PageSection {
 		DAO_TwitterMessage::update($message->id, $fields);
 		
 		// Custom field saves
-		@$field_ids = DevblocksPlatform::importGPC($_POST['field_ids'], 'array', array());
-		DAO_CustomFieldValue::handleFormPost(Context_TwitterMessage::ID, $message->id, $field_ids);
+		@$field_ids = DevblocksPlatform::importGPC($_POST['field_ids'], 'array', []);
+		if(!DAO_CustomFieldValue::handleFormPost(Context_TwitterMessage::ID, $id, $field_ids, $error))
+			throw new Exception_DevblocksAjaxValidationError($error);
 		
 		// Replies
 		if(!empty($do_reply) && !empty($reply)) {
