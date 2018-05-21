@@ -67,7 +67,7 @@
 			</td>
 			<td data-column="label" colspan="{$smarty.foreach.headers.total}" style="font-size:100%;padding:5px 0px;">
 				{if $result.t_is_closed}<span class="glyphicons glyphicons-circle-ok" style="font-size:16px;color:rgb(80,80,80);"></span>{/if}
-				<a class="subject" title="@{$result.t_user_name}" href="http://twitter.com/{{$result.t_user_screen_name}}/status/{$result.t_twitter_id}" target="_blank">@{$result.t_user_screen_name}</a> 
+				<a class="subject" title="@{$result.t_user_name}" href="http://twitter.com/{{$result.t_user_screen_name}}/status/{$result.t_twitter_id}" target="_blank" rel="noopener noreferrer">@{$result.t_user_screen_name}</a> 
 				{$result.t_content|devblocks_hyperlinks nofilter}
 				
 				<a href="{devblocks_url}c=profiles&type=twitter_message&id={$result.t_id}{/devblocks_url}" class="subject">{$result.t_name}</a>

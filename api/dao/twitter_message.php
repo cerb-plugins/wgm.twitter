@@ -338,12 +338,6 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 			'tables' => &$tables,
 		);
 		
-		array_walk_recursive(
-			$params,
-			array('DAO_TwitterMessage', '_translateVirtualParameters'),
-			$args
-		);
-		
 		return array(
 			'primary_table' => 'twitter_message',
 			'select' => $select_sql,
@@ -351,23 +345,6 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 			'where' => $where_sql,
 			'sort' => $sort_sql,
 		);
-	}
-	
-	private static function _translateVirtualParameters($param, $key, &$args) {
-		if(!is_a($param, 'DevblocksSearchCriteria'))
-			return;
-			
-		$from_context = Context_TwitterMessage::ID;
-		$from_index = 'twitter_message.id';
-		
-		$param_key = $param->field;
-		settype($param_key, 'string');
-		
-		switch($param_key) {
-			case SearchFields_TwitterMessage::VIRTUAL_HAS_FIELDSET:
-				self::_searchComponentsVirtualHasFieldset($param, $from_context, $from_index, $args['join_sql'], $args['where_sql']);
-				break;
-		}
 	}
 	
 	/**
@@ -465,10 +442,18 @@ class SearchFields_TwitterMessage extends DevblocksSearchFields {
 	}
 	
 	static function getWhereSQL(DevblocksSearchCriteria $param) {
-		if('cf_' == substr($param->field, 0, 3)) {
-			return self::_getWhereSQLFromCustomFields($param);
-		} else {
-			return $param->getWhereSQL(self::getFields(), self::getPrimaryKey());
+		switch($param->field) {
+			case self::VIRTUAL_HAS_FIELDSET:
+				return self::_getWhereSQLFromVirtualSearchSqlField($param, CerberusContexts::CONTEXT_CUSTOM_FIELDSET, sprintf('SELECT context_id FROM context_to_custom_fieldset WHERE context = %s AND custom_fieldset_id IN (%%s)', Cerb_ORMHelper::qstr(Context_TwitterMessage::ID)), self::getPrimaryKey());
+				break;
+				
+			default:
+				if('cf_' == substr($param->field, 0, 3)) {
+					return self::_getWhereSQLFromCustomFields($param);
+				} else {
+					return $param->getWhereSQL(self::getFields(), self::getPrimaryKey());
+				}
+				break;
 		}
 	}
 	
@@ -556,12 +541,6 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 			SearchFields_TwitterMessage::TWITTER_ID,
 			SearchFields_TwitterMessage::TWITTER_USER_ID,
 			SearchFields_TwitterMessage::VIRTUAL_HAS_FIELDSET,
-		));
-		
-		$this->addParamsHidden(array(
-			SearchFields_TwitterMessage::ID,
-			SearchFields_TwitterMessage::TWITTER_ID,
-			SearchFields_TwitterMessage::TWITTER_USER_ID,
 		));
 		
 		$this->doResetCriteria();
@@ -696,6 +675,14 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 					'type' => DevblocksSearchCriteria::TYPE_DATE,
 					'options' => array('param_key' => SearchFields_TwitterMessage::CREATED_DATE),
 				),
+			'fieldset' =>
+				array(
+					'type' => DevblocksSearchCriteria::TYPE_VIRTUAL,
+					'options' => array('param_key' => SearchFields_TwitterMessage::VIRTUAL_HAS_FIELDSET),
+					'examples' => [
+						['type' => 'search', 'context' => CerberusContexts::CONTEXT_CUSTOM_FIELDSET, 'qr' => 'context:' . Context_TwitterMessage::ID],
+					]
+				),
 			'isClosed' => 
 				array(
 					'type' => DevblocksSearchCriteria::TYPE_BOOL,
@@ -759,6 +746,10 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 					array_keys($values)
 				);
 				break;
+				
+			case 'fieldset':
+				return DevblocksSearchCriteria::getVirtualQuickSearchParamFromTokens($field, $tokens, '*_has_fieldset');
+				break;
 		
 			default:
 				$search_fields = $this->getQuickSearchFields();
@@ -795,63 +786,6 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 
 		$tpl->assign('view_template', 'devblocks:wgm.twitter::tweet/view.tpl');
 		$tpl->display('devblocks:cerberusweb.core::internal/views/subtotals_and_view.tpl');
-	}
-
-	function renderCriteria($field) {
-		$tpl = DevblocksPlatform::services()->template();
-		$active_worker = CerberusApplication::getActiveWorker();
-		
-		$tpl->assign('id', $this->id);
-
-		switch($field) {
-			case SearchFields_TwitterMessage::TWITTER_ID:
-			case SearchFields_TwitterMessage::TWITTER_USER_ID:
-			case SearchFields_TwitterMessage::USER_NAME:
-			case SearchFields_TwitterMessage::USER_SCREEN_NAME:
-			case SearchFields_TwitterMessage::USER_PROFILE_IMAGE_URL:
-			case SearchFields_TwitterMessage::CONTENT:
-				$tpl->display('devblocks:cerberusweb.core::internal/views/criteria/__string.tpl');
-				break;
-				
-			case SearchFields_TwitterMessage::ID:
-			case SearchFields_TwitterMessage::USER_FOLLOWERS_COUNT:
-				$tpl->display('devblocks:cerberusweb.core::internal/views/criteria/__number.tpl');
-				break;
-				
-			case SearchFields_TwitterMessage::IS_CLOSED:
-				$tpl->display('devblocks:cerberusweb.core::internal/views/criteria/__bool.tpl');
-				break;
-				
-			case SearchFields_TwitterMessage::CREATED_DATE:
-				$tpl->display('devblocks:cerberusweb.core::internal/views/criteria/__date.tpl');
-				break;
-			
-			case SearchFields_TwitterMessage::CONNECTED_ACCOUNT_ID:
-				$options = array();
-
-				$accounts = DAO_ConnectedAccount::getReadableByActor($active_worker, ServiceProvider_Twitter::ID);
-				if(is_array($accounts))
-				foreach($accounts as $account) {
-					$options[$account->id] = $account->name;
-				}
-				$tpl->assign('options', $options);
-				
-				$tpl->display('devblocks:cerberusweb.core::internal/views/criteria/__list.tpl');
-				break;
-				
-			case SearchFields_TwitterMessage::VIRTUAL_HAS_FIELDSET:
-				$this->_renderCriteriaHasFieldset($tpl, Context_TwitterMessage::ID);
-				break;
-				
-			default:
-				// Custom Fields
-				if('cf_' == substr($field,0,3)) {
-					$this->_renderCriteriaCustomField($tpl, substr($field,3));
-				} else {
-					echo ' ';
-				}
-				break;
-		}
 	}
 
 	function renderCriteriaParam($param) {
