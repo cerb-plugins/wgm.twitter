@@ -457,6 +457,43 @@ class SearchFields_TwitterMessage extends DevblocksSearchFields {
 		}
 	}
 	
+	static function getFieldForSubtotalKey($key, array $query_fields, array $search_fields, $primary_key) {
+		switch($key) {
+			case 'account':
+				$key = 'account.id';
+				break;
+		}
+		
+		return parent::getFieldForSubtotalKey($key, $query_fields, $search_fields, $primary_key);
+	}
+	
+	static function getLabelsForKeyValues($key, $values) {
+		switch($key) {
+			case SearchFields_TwitterMessage::CONNECTED_ACCOUNT_ID:
+				$models = DAO_ConnectedAccount::getIds($values);
+				$label_map = array_column(DevblocksPlatform::objectsToArrays($models), 'name', 'id');
+				if(in_array(0,$values))
+					$label_map[0] = DevblocksPlatform::translate('common.none');
+				return $label_map;
+				break;
+				
+			case SearchFields_TwitterMessage::ID:
+				$models = DAO_TwitterMessage::getIds($values);
+				$dicts = DevblocksDictionaryDelegate::getDictionariesFromModels($models, Context_TwitterMessage::ID);
+				$label_map = array_column(DevblocksPlatform::objectsToArrays($dicts), '_label', 'id');
+				if(in_array(0,$values))
+					$label_map[0] = DevblocksPlatform::translate('common.none');
+				return $label_map;
+				break;
+				
+			case SearchFields_TwitterMessage::IS_CLOSED:
+				return parent::_getLabelsForKeyBooleanValues();
+				break;
+		}
+		
+		return parent::getLabelsForKeyValues($key, $values);
+	}
+	
 	/**
 	 * @return DevblocksSearchField[]
 	 */
@@ -581,6 +618,7 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 			
 			switch($field_key) {
 				// Fields
+				case SearchFields_TwitterMessage::CONNECTED_ACCOUNT_ID:
 				case SearchFields_TwitterMessage::IS_CLOSED:
 				case SearchFields_TwitterMessage::USER_NAME:
 				case SearchFields_TwitterMessage::USER_SCREEN_NAME:
@@ -615,6 +653,13 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 			return array();
 		
 		switch($column) {
+			case SearchFields_TwitterMessage::CONNECTED_ACCOUNT_ID:
+				$label_map = function(array $values) use ($column) {
+					return SearchFields_TwitterMessage::getLabelsForKeyValues($column, $values);
+				};
+				$counts = $this->_getSubtotalCountForStringColumn($context, $column, $label_map, 'in', 'options[]');
+				break;
+				
 			case SearchFields_TwitterMessage::IS_CLOSED:
 				$counts = $this->_getSubtotalCountForBooleanColumn($context, $column);
 				break;
@@ -683,6 +728,14 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 						['type' => 'search', 'context' => CerberusContexts::CONTEXT_CUSTOM_FIELDSET, 'qr' => 'context:' . Context_TwitterMessage::ID],
 					]
 				),
+			'id' => 
+				array(
+					'type' => DevblocksSearchCriteria::TYPE_NUMBER,
+					'options' => array('param_key' => SearchFields_TwitterMessage::ID),
+					'examples' => array(
+						['type' => 'chooser', 'context' => Context_TwitterMessage::ID, 'q' => ''],
+					),
+			),
 			'isClosed' => 
 				array(
 					'type' => DevblocksSearchCriteria::TYPE_BOOL,
@@ -799,15 +852,10 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 				break;
 				
 			case SearchFields_TwitterMessage::CONNECTED_ACCOUNT_ID:
-				$accounts = DAO_ConnectedAccount::getReadableByActor($active_worker, ServiceProvider_Twitter::ID);
-				$strings = array();
-				
-				foreach($values as $account_id) {
-					if(isset($accounts[$account_id]))
-						$strings[] = DevblocksPlatform::strEscapeHtml($accounts[$account_id]->name);
-				}
-				
-				echo implode(' or ', $strings);
+				$label_map = SearchFields_TwitterMessage::getLabelsForKeyValues($field, $values);
+				if(in_array(0,$values))
+					$label_map[0] = DevblocksPlatform::translate('common.none');
+				parent::_renderCriteriaParamString($param, $label_map);
 				break;
 			
 			default:
@@ -860,13 +908,13 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 				break;
 				
 			case SearchFields_TwitterMessage::CONNECTED_ACCOUNT_ID:
-				@$options = DevblocksPlatform::importGPC($_REQUEST['options'],'array',array());
+				@$options = DevblocksPlatform::importGPC($_REQUEST['options'],'array',[]);
 				$options = DevblocksPlatform::sanitizeArray($options, 'integer', array('nonzero','unique'));
 				$criteria = new DevblocksSearchCriteria($field,$oper,$options);
 				break;
 				
 			case SearchFields_TwitterMessage::VIRTUAL_HAS_FIELDSET:
-				@$options = DevblocksPlatform::importGPC($_REQUEST['options'],'array',array());
+				@$options = DevblocksPlatform::importGPC($_REQUEST['options'],'array',[]);
 				$criteria = new DevblocksSearchCriteria($field,DevblocksSearchCriteria::OPER_IN,$options);
 				break;
 				
