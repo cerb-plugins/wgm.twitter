@@ -1,6 +1,6 @@
 {$peek_context = Context_TwitterMessage::ID}
 {$is_writeable = Context_ConnectedAccount::isReadableByActor($message->connected_account_id, $active_worker)}
-<form action="{devblocks_url}{/devblocks_url}" method="POST" id="frmTwitterMessage">
+<form action="{devblocks_url}{/devblocks_url}" method="POST" id="frmTwitterMessage" onsubmit="return false;">
 <input type="hidden" name="c" value="profiles">
 <input type="hidden" name="a" value="handleSectionAction">
 <input type="hidden" name="section" value="twitter_message">
@@ -19,7 +19,7 @@
 				<b class="subject" title="{$message->user_name}">{$message->user_name}</b>
 				<span style="color:rgb(150,150,150);">
 					@{$message->user_screen_name}
-					 &middot; 
+					&middot; 
 					<span title="{$message->created_date|devblocks_date}">{$message->created_date|devblocks_date:'d M Y'}</span>
 				</span>
 			</div>
@@ -80,7 +80,7 @@ $(function() {
 		var $counter = $popup.find('div.tweet-counter');
 		
 		$txt.on('keyup', function() {
-            var parsedTweet = twttr.txt.parseTweet($txt.val());
+			var parsedTweet = twttr.txt.parseTweet($txt.val());
 			var percentage = Math.round(parsedTweet.permillage / 10);
 			$counter.text(percentage + '%');
 			
