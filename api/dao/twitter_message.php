@@ -237,7 +237,7 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 	 * @return Model_TwitterMessage[]
 	 */
 	static private function _getObjectsFromResult($rs) {
-		$objects = array();
+		$objects = [];
 		
 		if(!($rs instanceof mysqli_result))
 			return false;
@@ -296,7 +296,7 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 	public static function getSearchQueryComponents($columns, $params, $sortBy=null, $sortAsc=null) {
 		$fields = SearchFields_TwitterMessage::getFields();
 		
-		list($tables,$wheres) = parent::_parseSearchParams($params, $columns, 'SearchFields_TwitterMessage', $sortBy);
+		list(,$wheres) = parent::_parseSearchParams($params, $columns, 'SearchFields_TwitterMessage', $sortBy);
 		
 		$select_sql = sprintf("SELECT ".
 			"twitter_message.id as %s, ".
@@ -330,14 +330,6 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 			
 		$sort_sql = self::_buildSortClause($sortBy, $sortAsc, $fields, $select_sql, 'SearchFields_TwitterMessage');
 	
-		// Virtuals
-		
-		$args = array(
-			'join_sql' => &$join_sql,
-			'where_sql' => &$where_sql,
-			'tables' => &$tables,
-		);
-		
 		return array(
 			'primary_table' => 'twitter_message',
 			'select' => $select_sql,
@@ -387,7 +379,7 @@ class DAO_TwitterMessage extends Cerb_ORMHelper {
 		if(!($rs instanceof mysqli_result))
 			return false;
 		
-		$results = array();
+		$results = [];
 		
 		while($row = mysqli_fetch_assoc($rs)) {
 			$object_id = intval($row[SearchFields_TwitterMessage::ID]);
@@ -610,7 +602,7 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 	function getSubtotalFields() {
 		$all_fields = $this->getParamsAvailable(true);
 		
-		$fields = array();
+		$fields = [];
 
 		if(is_array($all_fields))
 		foreach($all_fields as $field_key => $field_model) {
@@ -645,12 +637,12 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 	}
 	
 	function getSubtotalCounts($column) {
-		$counts = array();
+		$counts = [];
 		$fields = $this->getFields();
 		$context = Context_TwitterMessage::ID;
 
 		if(!isset($fields[$column]))
-			return array();
+			return [];
 		
 		switch($column) {
 			case SearchFields_TwitterMessage::CONNECTED_ACCOUNT_ID:
@@ -778,12 +770,12 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 			case 'account':
 				$field_key = SearchFields_TwitterMessage::CONNECTED_ACCOUNT_ID;
 				$oper = null;
-				$patterns = array();
+				$patterns = [];
 				
 				CerbQuickSearchLexer::getOperArrayFromTokens($tokens, $oper, $patterns);
 				
 				$accounts = DAO_ConnectedAccount::getByExtension(ServiceProvider_Twitter::ID);
-				$values = array();
+				$values = [];
 				
 				if(is_array($patterns))
 				foreach($patterns as $pattern) {
@@ -844,7 +836,6 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 	function renderCriteriaParam($param) {
 		$field = $param->field;
 		$values = !is_array($param->value) ? array($param->value) : $param->value;
-		$active_worker = CerberusApplication::getActiveWorker();
 
 		switch($field) {
 			case SearchFields_TwitterMessage::IS_CLOSED:
@@ -866,8 +857,6 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 
 	function renderVirtualCriteria($param) {
 		$key = $param->field;
-		
-		$translate = DevblocksPlatform::getTranslationService();
 		
 		switch($key) {
 			case SearchFields_TwitterMessage::VIRTUAL_HAS_FIELDSET:
@@ -1055,7 +1044,7 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 			$token_types = array_merge($token_types, $custom_field_types);
 		
 		// Token values
-		$token_values = array();
+		$token_values = [];
 		
 		$token_values['_context'] = Context_TwitterMessage::ID;
 		$token_values['_types'] = $token_types;
@@ -1100,6 +1089,20 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 		];
 	}
 	
+	function getKeyMeta() {
+		$keys = parent::getKeyMeta();
+		
+		$keys['content']['notes'] = "The content of the tweet";
+		$keys['is_closed']['notes'] = "Is the tweet resolved?";
+		$keys['twitter_id']['notes'] = "The ID of the Twitter [connected account](/docs/records/types/connected_account/)";
+		$keys['user_followers_count']['notes'] = "The user's follower count";
+		$keys['user_name']['notes'] = "The user's name";
+		$keys['user_profile_image_url']['notes'] = "URL to the user's profile image";
+		$keys['user_screen_name']['notes'] = "The user's screen name";
+		
+		return $keys;
+	}
+	
 	function getDaoFieldsFromKeyAndValue($key, $value, &$out_fields, &$error) {
 		switch(DevblocksPlatform::strLower($key)) {
 			case 'links':
@@ -1108,6 +1111,11 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 		}
 		
 		return true;
+	}
+	
+	function lazyLoadGetKeys() {
+		$lazy_keys = parent::lazyLoadGetKeys();
+		return $lazy_keys;
 	}
 
 	function lazyLoadContextValues($token, $dictionary) {
@@ -1118,10 +1126,10 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 		$context_id = $dictionary['id'];
 		
 		@$is_loaded = $dictionary['_loaded'];
-		$values = array();
+		$values = [];
 		
 		if(!$is_loaded) {
-			$labels = array();
+			$labels = [];
 			CerberusContexts::getContext($context, $context_id, $labels, $values, null, true, true);
 		}
 		
@@ -1150,8 +1158,6 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 	}
 	
 	function getChooserView($view_id=null) {
-		$active_worker = CerberusApplication::getActiveWorker();
-
 		if(empty($view_id))
 			$view_id = 'chooser_'.str_replace('.','_',$this->id).time().mt_rand(0,9999);
 	
@@ -1175,7 +1181,7 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 		return $view;
 	}
 	
-	function getView($context=null, $context_id=null, $options=array(), $view_id=null) {
+	function getView($context=null, $context_id=null, $options=[], $view_id=null) {
 		$view_id = !empty($view_id) ? $view_id : str_replace('.','_',$this->id);
 		
 		$defaults = C4_AbstractViewModel::loadFromClass($this->getViewClass());
@@ -1183,7 +1189,7 @@ class Context_TwitterMessage extends Extension_DevblocksContext {
 
 		$view = C4_AbstractViewLoader::getView($view_id, $defaults);
 		
-		$params_req = array();
+		$params_req = [];
 		
 		// [TODO] virtual_context_link
 		if(!empty($context) && !empty($context_id)) {
