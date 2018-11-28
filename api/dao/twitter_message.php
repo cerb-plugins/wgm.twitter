@@ -774,7 +774,7 @@ class View_TwitterMessage extends C4_AbstractView implements IAbstractView_Subto
 				
 				CerbQuickSearchLexer::getOperArrayFromTokens($tokens, $oper, $patterns);
 				
-				$accounts = DAO_ConnectedAccount::getByExtension(ServiceProvider_Twitter::ID);
+				$accounts = DAO_ConnectedAccount::getByServiceExtension(ServiceProvider_OAuth1::ID);
 				$values = [];
 				
 				if(is_array($patterns))

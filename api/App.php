@@ -1,4 +1,6 @@
 <?php
+use GuzzleHttp\Psr7\Request;
+
 if(class_exists('Extension_PageMenuItem')):
 class WgmTwitter_SetupPluginsMenuItem extends Extension_PageMenuItem {
 	const POINT = 'wgmtwitter.setup.menu.plugins.twitter';
@@ -66,31 +68,48 @@ class WgmTwitter_MessageProfileSection extends Extension_PageSection {
 		if(!Context_ConnectedAccount::isReadableByActor($connected_account, $active_worker))
 			return;
 		
-		$fields = array(
+		$fields = [
 			DAO_TwitterMessage::IS_CLOSED => $is_closed ? 1 : 0,
-		);
+		];
 		
 		DAO_TwitterMessage::update($message->id, $fields);
 		
 		// Custom field saves
+		$error = null;
 		@$field_ids = DevblocksPlatform::importGPC($_POST['field_ids'], 'array', []);
 		if(!DAO_CustomFieldValue::handleFormPost(Context_TwitterMessage::ID, $id, $field_ids, $error))
 			throw new Exception_DevblocksAjaxValidationError($error);
 		
 		// Replies
 		if(!empty($do_reply) && !empty($reply)) {
-			$twitter = WgmTwitter_API::getInstance();
-			if(false == ($credentials = $connected_account->decryptParams($active_worker)))
-				return;
+			$url = 'https://api.twitter.com/1.1/statuses/update.json';
 			
-			$twitter->setCredentials($credentials['oauth_token'], $credentials['oauth_token_secret']);
-			
-			$post_data = array(
+			$post_data = [
 				'status' => $reply,
 				'in_reply_to_status_id' => $message->twitter_id,
-			);
+			];
 			
-			$twitter->post(WgmTwitter_API::TWITTER_UPDATE_STATUS_API, $post_data);
+			$request = new Request(
+				'POST',
+				$url,
+				[
+					'Content-Type' => 'application/x-www-form-urlencoded'
+				],
+				http_build_query($post_data, null, '&', PHP_QUERY_RFC3986)
+			);
+			$request_options = [];
+			$error = null;
+			$actor = [CerberusContexts::CONTEXT_APPLICATION, 0];
+			
+			if(false == ($connected_account->authenticateHttpRequest($request, $request_options, $actor)))
+				return;
+			
+			$response = DevblocksPlatform::services()->http()->sendRequest($request, $request_options, $error);
+			
+			if(200 != $response->getStatusCode())
+				throw new Exception_DevblocksAjaxValidationError("Failed to reply to tweet.");
+			
+			//$json = DevblocksPlatform::services()->http()->getResponseAsJson($response);
 		}
 	}
 	
@@ -123,8 +142,6 @@ class WgmTwitter_MessageProfileSection extends Extension_PageSection {
 		@$ids = DevblocksPlatform::importGPC($_REQUEST['ids']);
 		@$view_id = DevblocksPlatform::importGPC($_REQUEST['view_id']);
 
-		$active_worker = CerberusApplication::getActiveWorker();
-		
 		$tpl = DevblocksPlatform::services()->template();
 		$tpl->assign('view_id', $view_id);
 
@@ -157,7 +174,6 @@ class WgmTwitter_MessageProfileSection extends Extension_PageSection {
 		@$status = trim(DevblocksPlatform::importGPC($_POST['status'],'string',''));
 
 		$do = array();
-		$active_worker = CerberusApplication::getActiveWorker();
 		
 		// Do: Status
 		if(0 != strlen($status)) {
@@ -219,9 +235,6 @@ class WgmTwitter_SetupSection extends Extension_PageSection {
 		$visit = CerberusApplication::getVisit();
 		$visit->set(ChConfigurationPage::ID, 'twitter');
 		
-		$credentials = DevblocksPlatform::getPluginSetting('wgm.twitter','credentials',false,true,true);
-		$tpl->assign('credentials', $credentials);
-		
 		$sync_account_ids = DevblocksPlatform::getPluginSetting('wgm.twitter', 'sync_account_ids_json', [], true);
 		
 		if(is_array($sync_account_ids) && !empty($sync_account_ids)) {
@@ -236,18 +249,7 @@ class WgmTwitter_SetupSection extends Extension_PageSection {
 	
 	function saveJsonAction() {
 		try {
-			@$consumer_key = DevblocksPlatform::importGPC($_REQUEST['consumer_key'],'string','');
-			@$consumer_secret = DevblocksPlatform::importGPC($_REQUEST['consumer_secret'],'string','');
 			@$sync_account_ids = DevblocksPlatform::importGPC($_REQUEST['sync_account_ids'],'array',[]);
-			
-			if(empty($consumer_key) || empty($consumer_secret))
-				throw new Exception("Both the Consumer Key and Secret are required.");
-			
-			$credentials = [
-				'consumer_key' => $consumer_key,
-				'consumer_secret' => $consumer_secret,
-			];
-			DevblocksPlatform::setPluginSetting('wgm.twitter','credentials',$credentials,true,true);
 			
 			$sync_account_ids = DevblocksPlatform::sanitizeArray($sync_account_ids, 'int');
 			DevblocksPlatform::setPluginSetting('wgm.twitter', 'sync_account_ids_json', $sync_account_ids, true);
@@ -263,78 +265,10 @@ class WgmTwitter_SetupSection extends Extension_PageSection {
 };
 endif;
 
-class WgmTwitter_API {
-	const TWITTER_REQUEST_TOKEN_URL = "https://api.twitter.com/oauth/request_token";
-	const TWITTER_AUTHENTICATE_URL = "https://api.twitter.com/oauth/authenticate";
-	const TWITTER_ACCESS_TOKEN_URL = "https://api.twitter.com/oauth/access_token";
-	
-	const TWITTER_PUBLIC_TIMELINE_API = "https://api.twitter.com/1.1/statuses/home_timeline.json";
-	const TWITTER_UPDATE_STATUS_API = "https://api.twitter.com/1.1/statuses/update.json";
-	const TWITTER_STATUSES_MENTIONS_API = "https://api.twitter.com/1.1/statuses/mentions_timeline.json";
-	
-	static $_instance = null;
-	private $_oauth = null;
-	
-	private function __construct() {
-		if(false == ($credentials = DevblocksPlatform::getPluginSetting('wgm.twitter', 'credentials', false, true, true)))
-			return;
-		
-		@$consumer_key = $credentials['consumer_key'];
-		@$consumer_secret = $credentials['consumer_secret'];
-		
-		$this->_oauth = DevblocksPlatform::services()->oauth($consumer_key, $consumer_secret);
-	}
-	
-	/**
-	 * @return WgmTwitter_API
-	 */
-	static public function getInstance() {
-		if(null == self::$_instance) {
-			self::$_instance = new WgmTwitter_API();
-		}
-
-		return self::$_instance;
-	}
-	
-	public function setCredentials($token, $secret) {
-		$this->_oauth->setTokens($token, $secret);
-	}
-	
-	public function getRequestToken($callback_url) {
-		return $this->_oauth->getRequestTokens(self::TWITTER_REQUEST_TOKEN_URL, $callback_url);
-	}
-	
-	public function getAuthenticationUrl($request_token) {
-		return $this->_oauth->getAuthenticationURL(self::TWITTER_AUTHENTICATE_URL, $request_token);
-	}
-	
-	public function getAccessToken($verifier) {
-		return $this->_oauth->getAccessToken(self::TWITTER_ACCESS_TOKEN_URL, array('oauth_verifier' => $verifier));
-	}
-	
-	public function post($url, $params) {
-		return $this->_execute($url, 'POST', $params);
-	}
-	
-	public function get($url) {
-		return $this->_execute($url, 'GET');
-	}
-	
-	public function authenticateHttpRequest(&$ch, &$verb, &$url, &$body, &$headers) {
-		return $this->_oauth->authenticateHttpRequest($ch, $verb, $url, $body, $headers);
-	}
-	
-	private function _execute($url, $method = 'GET', $params = array()) {
-		// [TODO] Response object?
-		return $this->_oauth->executeRequest($method, $url, $params);
-	}
-};
-
 if(class_exists('CerberusCronPageExtension')):
 class Cron_WgmTwitterChecker extends CerberusCronPageExtension {
 	public function run() {
 		$logger = DevblocksPlatform::services()->log('Twitter Checker');
-		$twitter = WgmTwitter_API::getInstance();
 		$db = DevblocksPlatform::services()->database();
 		
 		$logger->info("Started");
@@ -349,40 +283,41 @@ class Cron_WgmTwitterChecker extends CerberusCronPageExtension {
 		foreach($accounts as $account) {
 			$logger->info(sprintf("Checking mentions for @%s", $account->name));
 			
-			$credentials = $account->decryptParams();
-			
-			$twitter->setCredentials($credentials['oauth_token'], $credentials['oauth_token_secret']);
-			
-			$twitter_url = WgmTwitter_API::TWITTER_STATUSES_MENTIONS_API . '?count=150&tweet_mode=extended';
+			$url = 'https://api.twitter.com/1.1/statuses/mentions_timeline.json?count=150&tweet_mode=extended';
 			
 			$max_id = $db->GetOneMaster(sprintf("SELECT MAX(CAST(twitter_id as unsigned)) FROM twitter_message WHERE connected_account_id = %d", $account->id));
 			
 			if($max_id)
-				$twitter_url .= sprintf("&since_id=%s", $max_id);
+				$url .= sprintf("&since_id=%s", $max_id);
 			
-			$out = $twitter->get($twitter_url);
+			$request = new Request('GET', $url);
+			$request_options = [];
+			$error = null;
 			
-			// [TODO] Handle utf8mb4
-		
-			if(false !== ($json = @json_decode($out, true))) {
-				foreach($json as $message) {
-					$fields = array(
-						DAO_TwitterMessage::CONNECTED_ACCOUNT_ID => $account->id,
-						DAO_TwitterMessage::TWITTER_ID => $message['id_str'],
-						DAO_TwitterMessage::TWITTER_USER_ID => $message['user']['id_str'],
-						DAO_TwitterMessage::CREATED_DATE => strtotime($message['created_at']),
-						DAO_TwitterMessage::IS_CLOSED => 0,
-						DAO_TwitterMessage::USER_NAME => $message['user']['name'],
-						DAO_TwitterMessage::USER_SCREEN_NAME => $message['user']['screen_name'],
-						DAO_TwitterMessage::USER_PROFILE_IMAGE_URL => $message['user']['profile_image_url_https'],
-						DAO_TwitterMessage::USER_FOLLOWERS_COUNT => $message['user']['followers_count'],
-						DAO_TwitterMessage::CONTENT => $message['full_text'],
-					);
-					
-					$tweet_id = DAO_TwitterMessage::create($fields);
-					
-					$logger->info(sprintf("Saved mention #%d from %s", $tweet_id, $message['user']['screen_name']));
-				}
+			if(false == ($account->authenticateHttpRequest($request, $request_options, [CerberusContexts::CONTEXT_APPLICATION,0])))
+				continue;
+			
+			$response = DevblocksPlatform::services()->http()->sendRequest($request, $request_options, $error);
+			
+			$json = DevblocksPlatform::services()->http()->getResponseAsJson($response);
+			
+			foreach($json as $message) {
+				$fields = [
+					DAO_TwitterMessage::CONNECTED_ACCOUNT_ID => $account->id,
+					DAO_TwitterMessage::TWITTER_ID => $message['id_str'],
+					DAO_TwitterMessage::TWITTER_USER_ID => $message['user']['id_str'],
+					DAO_TwitterMessage::CREATED_DATE => strtotime($message['created_at']),
+					DAO_TwitterMessage::IS_CLOSED => 0,
+					DAO_TwitterMessage::USER_NAME => $message['user']['name'],
+					DAO_TwitterMessage::USER_SCREEN_NAME => $message['user']['screen_name'],
+					DAO_TwitterMessage::USER_PROFILE_IMAGE_URL => $message['user']['profile_image_url_https'],
+					DAO_TwitterMessage::USER_FOLLOWERS_COUNT => $message['user']['followers_count'],
+					DAO_TwitterMessage::CONTENT => $message['full_text'],
+				];
+				
+				$tweet_id = DAO_TwitterMessage::create($fields);
+				
+				$logger->info(sprintf("Saved mention #%d from %s", $tweet_id, $message['user']['screen_name']));
 			}
 		}
 		
@@ -398,219 +333,3 @@ class Cron_WgmTwitterChecker extends CerberusCronPageExtension {
 	}
 };
 endif;
-
-class WgmTwitter_EventActionPost extends Extension_DevblocksEventAction {
-	function render(Extension_DevblocksEvent $event, Model_TriggerEvent $trigger, $params=array(), $seq=null) {
-		$active_worker = CerberusApplication::getActiveWorker();
-		
-		$tpl = DevblocksPlatform::services()->template();
-		$tpl->assign('params', $params);
-		
-		if(!is_null($seq))
-			$tpl->assign('namePrefix', 'action'.$seq);
-
-		$connected_accounts = DAO_ConnectedAccount::getReadableByActor($active_worker, ServiceProvider_Twitter::ID);
-		$tpl->assign('connected_accounts', $connected_accounts);
-		
-		$tpl->display('devblocks:wgm.twitter::events/action_post_to_twitter.tpl');
-	}
-	
-	function simulate($token, Model_TriggerEvent $trigger, $params, DevblocksDictionaryDelegate $dict) {
-		@$connected_account_id = DevblocksPlatform::importVar($params['connected_account_id'], 'int', 0);
-		
-		if(!$connected_account_id || false == ($connected_account = DAO_ConnectedAccount::get($connected_account_id))) {
-			return "[ERROR] A Twitter connected account isn't configured.";
-		}
-		
-		if(false == ($credentials = $connected_account->decryptParams()))
-			return "[ERROR] Failed to decrypt connected account credentials.";
-		
-		@$token = $credentials['oauth_token'];
-		@$token_secret = $credentials['oauth_token_secret'];
-		
-		if(empty($token)) {
-			return "[ERROR] The connected Twitter account has an invalid token.";
-		}
-		
-		if(empty($token_secret)) {
-			return "[ERROR] The connected Twitter account has an invalid token secret.";
-		}
-		
-		// [TODO] Test Twitter API connection
-		
-		$tpl_builder = DevblocksPlatform::services()->templateBuilder();
-		if(false !== ($content = $tpl_builder->build($params['content'], $dict))) {
-			$out = sprintf(">>> Posting to Twitter using %s:\n%s\n",
-				$connected_account->name,
-				$content
-			);
-		} else {
-			return "[ERROR] Template failed to parse.";
-		}
-		
-		return $out;
-	}
-	
-	function run($token, Model_TriggerEvent $trigger, $params, DevblocksDictionaryDelegate $dict) {
-		$twitter = WgmTwitter_API::getInstance();
-		
-		@$connected_account_id = DevblocksPlatform::importVar($params['connected_account_id'], 'int', 0);
-		
-		if(false == ($connected_account = DAO_ConnectedAccount::get($connected_account_id)))
-			return;
-		
-		$credentials = $connected_account->decryptParams();
-		
-		// Translate message tokens
-		$tpl_builder = DevblocksPlatform::services()->templateBuilder();
-		if(false !== ($content = $tpl_builder->build($params['content'], $dict))) {
-			@$token = $credentials['oauth_token'];
-			@$token_secret = $credentials['oauth_token_secret'];
-			
-			if(empty($token) || empty($token_secret))
-				return;
-			
-			$twitter->setCredentials($token, $token_secret);
-			
-			$post_data = array(
-				'status' => $content,
-			);
-			
-			$twitter->post(WgmTwitter_API::TWITTER_UPDATE_STATUS_API, $post_data);
-			
-		}
-	}
-};
-
-class ServiceProvider_Twitter extends Extension_ServiceProvider implements IServiceProvider_OAuth, IServiceProvider_HttpRequestSigner {
-	const ID = 'wgm.twitter.service.provider';
-	
-	function renderConfigForm(Model_ConnectedAccount $account) {
-		$tpl = DevblocksPlatform::services()->template();
-		$active_worker = CerberusApplication::getActiveWorker();
-		
-		$tpl->assign('account', $account);
-		
-		$params = $account->decryptParams($active_worker);
-		$tpl->assign('params', $params);
-		
-		$tpl->display('devblocks:wgm.twitter::provider/twitter.tpl');
-	}
-	
-	function saveConfigForm(Model_ConnectedAccount $account, array &$params) {
-		@$edit_params = DevblocksPlatform::importGPC($_POST['params'], 'array', array());
-		
-		$active_worker = CerberusApplication::getActiveWorker();
-		$encrypt = DevblocksPlatform::services()->encryption();
-		
-		// Decrypt OAuth params
-		if(isset($edit_params['params_json'])) {
-			if(false == ($outh_params_json = $encrypt->decrypt($edit_params['params_json'])))
-				return "The connected account authentication is invalid.";
-				
-			if(false == ($oauth_params = json_decode($outh_params_json, true)))
-				return "The connected account authentication is malformed.";
-			
-			if(is_array($oauth_params))
-			foreach($oauth_params as $k => $v)
-				$params[$k] = $v;
-		}
-		
-		return true;
-	}
-	
-	private function _getAppKeys() {
-		if(false == ($credentials = DevblocksPlatform::getPluginSetting('wgm.twitter','credentials',false,true,true)))
-			return false;
-		
-		@$consumer_key = $credentials['consumer_key'];
-		@$consumer_secret = $credentials['consumer_secret'];
-		
-		if(empty($consumer_key) || empty($consumer_secret))
-			return false;
-		
-		return array(
-			'key' => $consumer_key,
-			'secret' => $consumer_secret,
-		);
-	}
-	
-	function oauthRender() {
-		@$form_id = DevblocksPlatform::importGPC($_REQUEST['form_id'], 'string', '');
-		
-		// Store the $form_id in the session
-		$_SESSION['oauth_form_id'] = $form_id;
-		
-		$url_writer = DevblocksPlatform::services()->url();
-
-		if(false == ($app_keys = $this->_getAppKeys())) {
-			echo DevblocksPlatform::strEscapeHtml("ERROR: The consumer key and secret aren't configured in Setup->Services->Twitter.");
-			return false;
-		}
-		
-		$oauth = DevblocksPlatform::services()->oauth($app_keys['key'], $app_keys['secret']);
-		
-		// OAuth callback
-		$redirect_url = $url_writer->write(sprintf('c=oauth&a=callback&ext=%s', ServiceProvider_Twitter::ID), true);
-		
-		$tokens = $oauth->getRequestTokens(WgmTwitter_API::TWITTER_REQUEST_TOKEN_URL, $redirect_url);
-		
-		// [TODO] We need to pass through the actual error
-		if(!isset($tokens['oauth_token'])) {
-			echo DevblocksPlatform::strEscapeHtml("ERROR: Twitter didn't return an access token.");
-			return false;
-		}
-		
-		$url = $oauth->getAuthenticationURL(WgmTwitter_API::TWITTER_AUTHENTICATE_URL, $tokens['oauth_token']);
-		
-		header('Location: ' . $url);
-	}
-	
-	// [TODO] Verify the caller?
-	function oauthCallback() {
-		$form_id = $_SESSION['oauth_form_id'];
-		unset($_SESSION['oauth_form_id']);
-		
-		$encrypt = DevblocksPlatform::services()->encryption();
-		$active_worker = CerberusApplication::getActiveWorker();
-		
-		if(false == ($app_keys = $this->_getAppKeys())) {
-			echo DevblocksPlatform::strEscapeHtml("ERROR: The consumer key and secret aren't configured in Setup->Services->Twitter.");
-			return false;
-		}
-		
-		$oauth_token = $_REQUEST['oauth_token'];
-		$oauth_verifier = $_REQUEST['oauth_verifier'];
-		
-		$oauth = DevblocksPlatform::services()->oauth($app_keys['key'], $app_keys['secret']);
-		$oauth->setTokens($oauth_token);
-		
-		$params = $oauth->getAccessToken(WgmTwitter_API::TWITTER_ACCESS_TOKEN_URL, array('oauth_verifier' => $oauth_verifier));
-		
-		if(!is_array($params) || !isset($params['screen_name'])) {
-			echo DevblocksPlatform::strEscapeHtml("ERROR: We couldn't retrieve your username from the Twitter API.");
-			return false;
-		}
-		
-		// Output
-		$tpl = DevblocksPlatform::services()->template();
-		$tpl->assign('form_id', $form_id);
-		$tpl->assign('label', $params['screen_name']);
-		$tpl->assign('params_json', $encrypt->encrypt(json_encode($params)));
-		$tpl->display('devblocks:cerberusweb.core::internal/connected_account/oauth_callback.tpl');
-	}
-	
-	function authenticateHttpRequest(Model_ConnectedAccount $account, &$ch, &$verb, &$url, &$body, &$headers) {
-		$credentials = $account->decryptParams();
-		
-		if(
-			!isset($credentials['oauth_token'])
-			|| !isset($credentials['oauth_token_secret'])
-		)
-			return false;
-		
-		$twitter = WgmTwitter_API::getInstance();
-		$twitter->setCredentials($credentials['oauth_token'], $credentials['oauth_token_secret']);
-		return $twitter->authenticateHttpRequest($ch, $verb, $url, $body, $headers);
-	}
-}

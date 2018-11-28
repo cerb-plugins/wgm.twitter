@@ -10,20 +10,6 @@
 <div class="status"></div>
 
 <fieldset>
-	<legend>Twitter Application</legend>
-	
-	<b>Consumer ID:</b><br>
-	<input type="text" name="consumer_key" value="{$credentials.consumer_key}" size="45"><br>
-	<br>
-	
-	<b>Consumer Secret:</b><br>
-	<input type="password" name="consumer_secret" value="{$credentials.consumer_secret}" size="45"><br>
-	<br>
-	
-	<button type="button" class="submit"><span class="glyphicons glyphicons-circle-ok" style="color:rgb(0,180,0);"></span> {'common.save_changes'|devblocks_translate|capitalize}</button>
-</fieldset>
-
-<fieldset>
 	<legend>Synchronization</legend>
 	
 	<b>Download @mentions as Twitter Message records for these connected accounts:</b><br>

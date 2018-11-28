@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.devblocks.com/schema/plugin.xsd">
 	<id>wgm.twitter</id>
-	<name>Twitter Integration</name>
+	<name>Twitter Integration (Legacy)</name>
 	<description>This plugin provides integration with Twitter via their API. This plugin is intended to be a bridge used by other plugins to communicate with Twitter services. The plugin introduces record types for Twitter Accounts and Messages.  It supports multiple accounts;  @mentions are automatically synchronized and messages can be replied to from within Cerb.  In addition, it adds a new bot action with the ability to post status updates to Twitter.</description>
 	<author>Webgroup Media, LLC.</author>
 	<version>1.6.6</version>
@@ -32,11 +32,6 @@
 	<!-- Exported Classes -->
 	
  	<class_loader>
-		<file path="api/App.php">
-			<class name="ServiceProvider_Twitter" />
-			<class name="WgmTwitter_API" />
-		</file>
-		
 		<file path="api/dao/twitter_message.php">
 			<class name="Context_TwitterMessage" />
 			<class name="DAO_TwitterMessage" />
@@ -90,25 +85,6 @@
 			</params>
 		</extension>
 		
-		<!-- Service Providers -->
-		
-		<extension point="cerb.service.provider">
-			<id>wgm.twitter.service.provider</id>
-			<name>Twitter</name>
-			<class>
-				<file>api/App.php</file>
-				<name>ServiceProvider_Twitter</name>
-			</class>
-			<params>
-				<param key="contexts">
-					<value>
-						<data key="cerberusweb.contexts.app" />
-						<data key="cerberusweb.contexts.worker" />
-					</value>
-				</param>
-			</params>
-		</extension>
-
 		<!-- Setup Page Menu Item -->
 
 		<extension point="cerberusweb.ui.page.menu.item">
@@ -166,24 +142,5 @@
 			<params />
 		</extension>
 		
-		<!-- Event Actions -->
-		
-		<extension point="devblocks.event.action">
-			<id>wgmtwitter.event.action.post</id>
-			<name>Update Twitter Status</name>
-			<class>
-				<file>api/App.php</file>
-				<name>WgmTwitter_EventActionPost</name>
-			</class>
-			<params>
-				<param key="label" value="Post to Twitter" />
-				<param key="events">
-					<value>
-						<data key="*" />
-					</value>
-				</param>
-			</params>
-		</extension>
-		
-    </extensions> 
+	</extensions>
 </plugin>
