@@ -4,20 +4,20 @@
 	<name>Twitter Integration (Legacy)</name>
 	<description>This plugin provides integration with Twitter via their API. This plugin is intended to be a bridge used by other plugins to communicate with Twitter services. The plugin introduces record types for Twitter Accounts and Messages.  It supports multiple accounts;  @mentions are automatically synchronized and messages can be replied to from within Cerb.  In addition, it adds a new bot action with the ability to post status updates to Twitter.</description>
 	<author>Webgroup Media, LLC.</author>
-	<version>1.6.6</version>
+	<version>1.7.0</version>
 	<link>http://www.cerbweb.com/book/latest/plugins/wgm.twitter.html</link>
 	<image>plugin.png</image>
  
  	<!-- Requirements -->
 
 	<requires>
-		<app_version min="9.0" max="9.0.99" />
+		<app_version min="9.1" max="9.1.99" />
 	</requires>
  
 	<!-- Plugin Dependencies -->
 	
 	<dependencies>
-		<require plugin_id="cerberusweb.core" version="9.0" />
+		<require plugin_id="cerberusweb.core" version="9.1" />
 	</dependencies>
 
 	<!-- Patches -->
