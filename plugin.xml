@@ -85,36 +85,6 @@
 			</params>
 		</extension>
 		
-		<!-- Setup Page Menu Item -->
-
-		<extension point="cerberusweb.ui.page.menu.item">
-			<id>wgmtwitter.setup.menu.plugins.twitter</id>
-			<name>Twitter</name>
-			<class>
-				<file>api/App.php</file>
-				<name>WgmTwitter_SetupPluginsMenuItem</name>
-			</class>
-			<params>
-				<param key="page_id" value="core.page.configuration" />
-				<param key="menu_id" value="core.setup.menu.services" />
-			</params>
-		</extension>
-		
-		<!-- Setup Page Sections -->
-		
-		<extension point="cerberusweb.ui.page.section">
-			<id>wgmtwitter.setup.twitter</id>
-			<name>Setup Page Twitter Section</name>
-			<class>
-				<file>api/App.php</file>
-				<name>WgmTwitter_SetupSection</name>
-			</class>
-			<params>
-				<param key="page_id" value="core.page.configuration" />
-				<param key="uri" value="twitter" />
-			</params>
-		</extension>
-		
 		<!-- Profile Page Sections -->
 		
 		<extension point="cerberusweb.ui.page.section">

@@ -1,19 +1,6 @@
 <?php
 use GuzzleHttp\Psr7\Request;
 
-if(class_exists('Extension_PageMenuItem')):
-class WgmTwitter_SetupPluginsMenuItem extends Extension_PageMenuItem {
-	const POINT = 'wgmtwitter.setup.menu.plugins.twitter';
-	
-	function render() {
-		$tpl = DevblocksPlatform::services()->template();
-		$tpl->assign('extension', $this);
-		$tpl->display('devblocks:wgm.twitter::setup/menu_item.tpl');
-	}
-};
-endif;
-
-if(class_exists('Extension_PageSection')):
 class WgmTwitter_MessageProfileSection extends Extension_PageSection {
 	const ID = 'cerberusweb.profiles.twitter.message';
 	
@@ -223,49 +210,7 @@ class WgmTwitter_MessageProfileSection extends Extension_PageSection {
 		return;
 	}
 }
-endif;
 
-if(class_exists('Extension_PageSection')):
-class WgmTwitter_SetupSection extends Extension_PageSection {
-	const ID = 'wgmtwitter.setup.twitter';
-	
-	function render() {
-		$tpl = DevblocksPlatform::services()->template();
-
-		$visit = CerberusApplication::getVisit();
-		$visit->set(ChConfigurationPage::ID, 'twitter');
-		
-		$sync_account_ids = DevblocksPlatform::getPluginSetting('wgm.twitter', 'sync_account_ids_json', [], true);
-		
-		if(is_array($sync_account_ids) && !empty($sync_account_ids)) {
-			$sync_accounts = DAO_ConnectedAccount::getIds($sync_account_ids);
-			$tpl->assign('sync_accounts', $sync_accounts);
-		}
-		
-		// Template
-		
-		$tpl->display('devblocks:wgm.twitter::setup/index.tpl');
-	}
-	
-	function saveJsonAction() {
-		try {
-			@$sync_account_ids = DevblocksPlatform::importGPC($_REQUEST['sync_account_ids'],'array',[]);
-			
-			$sync_account_ids = DevblocksPlatform::sanitizeArray($sync_account_ids, 'int');
-			DevblocksPlatform::setPluginSetting('wgm.twitter', 'sync_account_ids_json', $sync_account_ids, true);
-			
-			echo json_encode(array('status'=>true,'message'=>'Saved!'));
-			return;
-			
-		} catch (Exception $e) {
-			echo json_encode(array('status'=>false,'error'=>$e->getMessage()));
-			return;
-		}
-	}
-};
-endif;
-
-if(class_exists('CerberusCronPageExtension')):
 class Cron_WgmTwitterChecker extends CerberusCronPageExtension {
 	public function run() {
 		$logger = DevblocksPlatform::services()->log('Twitter Checker');
@@ -327,9 +272,32 @@ class Cron_WgmTwitterChecker extends CerberusCronPageExtension {
 	public function configure($instance) {
 		$tpl = DevblocksPlatform::services()->template();
 		$tpl->cache_lifetime = "0";
+		
+		$sync_account_ids = DevblocksPlatform::getPluginSetting('wgm.twitter', 'sync_account_ids_json', [], true);
+		
+		if(is_array($sync_account_ids) && !empty($sync_account_ids)) {
+			$sync_accounts = DAO_ConnectedAccount::getIds($sync_account_ids);
+			$tpl->assign('sync_accounts', $sync_accounts);
+		}
+		
+		// Template
+		
+		$tpl->display('devblocks:wgm.twitter::setup/cron_setup.tpl');
 	}
 	
 	public function saveConfigurationAction() {
+		try {
+			@$sync_account_ids = DevblocksPlatform::importGPC($_REQUEST['sync_account_ids'],'array',[]);
+			
+			$sync_account_ids = DevblocksPlatform::sanitizeArray($sync_account_ids, 'int');
+			DevblocksPlatform::setPluginSetting('wgm.twitter', 'sync_account_ids_json', $sync_account_ids, true);
+			
+			//echo json_encode(array('status'=>true,'message'=>'Saved!'));
+			return;
+			
+		} catch (Exception $e) {
+			//echo json_encode(array('status'=>false,'error'=>$e->getMessage()));
+			return;
+		}
 	}
 };
-endif;
