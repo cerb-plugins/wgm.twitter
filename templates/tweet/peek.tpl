@@ -24,7 +24,7 @@
 				</span>
 			</div>
 			<div style="padding:5px;">
-				{$message->content|devblocks_hyperlinks nofilter}
+				{$message->content|escape|devblocks_hyperlinks nofilter}
 			</div> 
 		</td>
 	</tr>
